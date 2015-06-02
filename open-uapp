@@ -34,8 +34,9 @@ elif sys.argv[1] == "update":
 	if len(sys.argv) > 2:
 		if not uApp.hasApi():
 			print "You have not provided a API key"
+			print "Use 'open-uapp config api [key]' to set the api key"
 			sys.exit()
-		if not uApp.idExist(sys.argv):
+		if not uApp.idExist(sys.argv[2]):
 			print "The ID " + sys.argv[2] + " does not exsist"
 			sys.exit()
 		uApp.update["_id"] = uApp.get_idFromid(sys.argv[2])
@@ -50,6 +51,11 @@ elif sys.argv[1] == "update":
 				gotOne=True
 			elif argg == "package":
 				if os.path.isfile(values[i]):
+					if not uApp.smartApiExist():
+						print "You have not provided a Smartfile api key and api password"
+						print "Use 'open-uapp config smartfileApi' [api]"
+						print "Use 'open-uapp config smartfilePassword' [password]"
+						sys.exit()
 					uApp.upload(values[i])
 					gotOne=True
 				else:
@@ -87,10 +93,8 @@ elif sys.argv[1] == "update":
 				print "The key '" + argg + "' do not exsist, ignoring"			
 			i+=1
 		if gotOne:
-			print " "
-			print "After:"
-			print uApp.update
-			#uApp.update()
+			uApp.updateR()
+			print "Successfully Updated " + uApp.update['name']
 		else:
 			usage()
 	else:
@@ -100,19 +104,69 @@ elif sys.argv[1] == "delete":
 	if len(sys.argv) > 2:
 		if not uApp.hasApi():
 			print "You have not provided a API key"
+			print "Use 'open-uapp config api [key]' to set the api key"
 			sys.exit()
 		if uApp.idExist(sys.argv[2]):
 			uApp.delete(uApp.get_idFromid(sys.argv[2]))
-			print "Deleted: " + sys.argv[2]
+			print "Successfully Deleted " + sys.argv[2]
 		else:
 			print "The id " + sys.argv[2] + " do not exsist!"
 	else:
 		usage()
-		
+elif sys.argv[1] == "config":
+	if not len(sys.argv) > 2:
+		print "Configs"
+		print "API: " + uApp.api
+		print "repoUrl: " + uApp.repoUrl
+	elif sys.argv[2] == "api":
+		if not len(sys.argv) > 3:
+			print "You need to provide an api key"
+		else:
+			uApp.api = sys.argv[3]
+			uApp.saveConfig()
+			print "API successfully saved"
+	elif sys.argv[2] == "repoUrl":
+		if len(sys.argv) > 3:
+			print "You need to provide an url"
+		else:
+			uApp.repoUrl = sys.argv[3]
+			uApp.saveConfig()
+			print "repoUrl successfully saved"
+	elif sys.argv[2] == "smartfileApi":
+		if len(sys.argv) > 3:
+			print "You need to provide an SmartFile API key"
+		else:
+			uApp.smartApi = sys.argv[3]
+			uApp.saveConfig()
+			print "SmartFile API key successfully saved"
+	elif sys.argv[2] == "smartfilePassword":
+		if len(sys.argv) > 3:
+			print "You need to provide an SmartFile API Password"
+		else:
+			uApp.smartPass = sys.argv[3]
+			uApp.saveConfig()
+			print "SmartFile API Password successfully saved"
+	else:
+		print "Cannot find the config " + sys.argv[2]
+
 elif sys.argv[1] == "new" or sys.argv[1] == "add":
-	if not uApp.hasApi:
-		print "You have not provided a API key"
+	if not uApp.smartApiExist():
+		print "You have not provided a Smartfile api key and api password"
+		print "Use 'open-uapp config smartfileApi' [api]"
+		print "Use 'open-uapp config smartfilePassword' [password]"
 		sys.exit()
+	if not uApp.hasApi():
+		print "You have not provided a API key"
+		print "Use 'open-uapp config api [key]' to set the api key"
+		sys.exit()
+	uApp.update["name"] = raw_input("Name:")
+	while uApp.update["name"] == "":
+		print "Name is required."
+		uApp.update["name"] = raw_input("Name:")
+	uApp.update["id"] = raw_input("ID:")
+	while uApp.update["id"] == "":
+		print "ID is required."
+		uApp.update["id"] = raw_input("ID:")
 	uApp.update["author"] = raw_input("Author:")
 	uApp.update["category"] = raw_input("Category:")
 	uApp.update["description"] = raw_input("Description:")
@@ -121,10 +175,7 @@ elif sys.argv[1] == "new" or sys.argv[1] == "add":
 		print "The file " + icon + " do not exsist try agian"
 		pack = raw_input("Icon (file):")
 	uApp.upload(icon, True)
-	#TODO: Check if idExist
-	uApp.update["id"] = raw_input("ID:")
 	uApp.update["license"] = raw_input("License:")
-	uApp.update["name"] = raw_input("Name:")
 	pack = raw_input("Package (file):")
 	while not os.path.isfile(pack):
 		print "The file " + pack + " do not exsist try agian"
@@ -133,6 +184,7 @@ elif sys.argv[1] == "new" or sys.argv[1] == "add":
 	uApp.update["source"] = raw_input("Source:")
 	uApp.update["tagline"] = raw_input("Tagline:")
 	uApp.new()
+	print "Successfully Added " + uApp.update["name"]
 		 
 elif sys.argv[1] == "list":
 	uApp.get()

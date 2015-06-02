@@ -1,6 +1,8 @@
 import urllib2, urllib, json
-from os import stat
-from os.path import basename
+from os import stat, getenv, makedirs
+from os.path import basename, isdir, isfile
+import ConfigParser
+import requests
 
 class local:
 	def __init__(self):
@@ -31,29 +33,54 @@ class local:
 		
 class repo:
 	def __init__(self):
-		self.localFile="test/repolist.json"
 		self.repoUrl="https://open.uappexplorer.com/api/apps" 
 		self.local=False
 		self.debug=False
 		self.repo=""
 		self.update={}
 		self.api=""
-	
+		self.smartApi=""
+		self.smartPass=""
+		self.loadConfig()
+		
+	def loadConfig(self):
+		conf = ConfigParser.ConfigParser()
+		self.conf = conf
+		if not isdir(getenv("HOME")+"/.openuapp"):
+			makedirs(getenv("HOME")+"/.openuapp")
+		if not isfile(getenv("HOME")+"/.openuapp/conf.conf"):
+			self.saveConfig()
+		else:
+			conf.read(getenv("HOME")+"/.openuapp/conf.conf")
+			self.repoUrl = conf.get("Repo", "repoUrl")
+			self.api = conf.get("Repo", "API")
+			self.smartApi = conf.get("SmartFile", "API")
+			self.smartPass = conf.get("SmartFile", "Pass")
+			
+	def saveConfig(self):
+		conf = ConfigParser.ConfigParser()
+		self.conf = conf
+		cfgfile = open(getenv("HOME")+"/.openuapp/conf.conf",'w')
+		conf.add_section('Repo')
+		conf.set('Repo','repoUrl', self.repoUrl)
+		conf.set('Repo','API', self.api)
+		conf.add_section('SmartFile')
+		conf.set('SmartFile','API', self.smartApi)
+		conf.set('SmartFile','Pass', self.smartPass)
+		conf.write(cfgfile)
+		cfgfile.close()
+		
 	def hasApi(self):
 		if self.api == "": return False
 		else: return True
 		
-	def update(self):
+	def updateR(self):
 		url = self.repoUrl + "?apikey=" + self.api
-		build = urllib2.build_opener(urllib2.HTTPHandler)
-		values = urllib.urlencode(self.update)
-		req = urllib2.Request(url, values)
-		req = get_method = lambda: 'PUT'
-		build.open(req)
+		requests.put(url, data=self.update)
 		
 	def new(self):
 		self.update["apikey"] = self.api
-		values = urllib2.urlencode(self.update)
+		values = urllib.urlencode(self.update)
 		req = urllib2.Request(self.repoUrl, values)
 		urllib2.urlopen(req).read()
 		
@@ -61,24 +88,24 @@ class repo:
 		url = self.repoUrl + "?apikey=" + self.api
 		data = {}
 		data["_id"] = _id
-		build = urllib2.build_opener(urllib2.HTTPHandler)
-		value = urllib.urlencode(data)
-		req = urllib2.Request(url, value)
-		req = get_method = lambda: 'DELETE'
-		build.open(req)
+		requests.delete(url, data=data)
 				
 	def get(self):
 		try: self.repo = json.loads(urllib2.urlopen(self.repoUrl).read())
 		except:
 			print "Cannot fetch repo from url: " + self.repoUrl
 			raise
+		
+	def smartApiExist(self):
+		if self.smartApi == "" and self.smartPass == "": return False
+		else: return True	
 			
 	def upload(self, fil, icon=False):
-		#from smartfile import BasicClient
+		from smartfile import BasicClient
 		filename = basename(fil)
 		filee = file(fil, 'rb')
-		#api = BasicClient()
-		#response = api.post('/path/data/openappstore/v1/', file=filee)
+		api = BasicClient(self.smartApi, self.smartPass)
+		response = api.post('/path/data/openappstore/v1/', file=filee)
 		if self.debug: print "debug: "+response
 		if self.debug: print 'debug: https://file.ac/w-fprv1yrTM/' + filename
 		if not icon: 
@@ -89,9 +116,13 @@ class repo:
 	def idExist(self, idd):
 		if self.repo == "":
 			self.get()
+		print idd
 		for i in self.repo["data"]:
+			print i["id"]
 			if i["id"] == idd:
+				print "yeah?"
 				return True
+		print "False?"
 		return False
 		
 	def get_idFromid(self, idd):
