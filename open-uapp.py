@@ -8,14 +8,32 @@ import openUapp
 uApp = openUapp.repo()
 uAppLocal = openUapp.local()
 
-if sys.argv[1] == "update":
-	if sys.argv[2] and sys.argv[2] != "":
-		arggs = argv[2]
-		arggs.split(",")
-		values= argv[3]
-		values.split(",")
+def usage():
+	print 'Usage:'	
+	print 'open-uapp update [app ID] [keys splited by ,] "[values splited by , (in the same order as keys)]" | Edit an app'
+	print 'open-uapp new | Create a new app'
+	print 'open-uapp delete [app ID] | Delete an App'
+	print 'open-uapp list | List all Apps'
+	print 'open-uapp info [app ID] Displays info about an App'
+	print ' '
+	print 'Examples:'
+	print 'open-uapp update openstore.mzanetti name,version,pakage "testapp,0.1,build/package"'
+	print 'open-uapp new'
+	print 'open-uapp delete openstore.mzanetti'
+	print 'open-uapp list'
+	print 'open-uapp info openstore.mzanetti'
+	
+	sys.exit()
+
+if len(sys.argv) <= 1:
+	usage()
+elif sys.argv[1] == "update":
+	if len(sys.argv) <= 2:
+		arggs=sys.argv[3].split(",")
+		values=sys.argv[4].split(",")
 		gotOne=False
 		i=0
+		print arggs
 		for argg in arggs:
 			if argg == "version":
 				uApp.update["version"] = values[i] 
@@ -49,17 +67,18 @@ if sys.argv[1] == "update":
 				uApp.update["category"] = values[i] 
 				gotOne=True			
 			else:
-				print "The key: " + argg + " do not exsist in the repo, ignoring"			
+				print "The key '" + argg + "' do not exsist in the repo, ignoring"			
 			i+=1
 		if gotOne:
-			uApp.update()
+			print "YEAH"
+			#uApp.update()
 		else:
 			usage()
 	else:
 		usage()
 				
 elif sys.argv[1] == "delete":
-	if sys.argv[2] and sys.argv[2] != "":
+	if len(sys.argv) <= 2:
 		if uApp.idExists(sys.argv[2]):
 			uApp.delete(uApp.get_idFromid(sys.argv[2]))
 			print "Deleted: " + sys.argv[2]
@@ -71,30 +90,28 @@ elif sys.argv[1] == "delete":
 elif sys.argv[1] == "new" or sys.argv[1] == "add":
 	print "under deveopment"
 		 
+elif sys.argv[1] == "list":
+	uApp.get()
+	for i in uApp.repo["data"]:
+		print i["name"] + " | " + i["id"]
+		
+elif sys.argv[1] == "info":
+	if len(sys.argv) <= 2:
+		uApp.get()
+		notFound=True
+		for i in uApp.repo["data"]:
+			if sys.argv[2] == i["id"]:
+				notFound=False
+				print "Name: " + i["name"]
+				print "Description: " + i["description"]
+				print "Tagline: " + i["tagline"]
+				print "License: " + i["license"]
+				print "Author: " + i["author"]
+				print "Category: " + i["category"]
+		if (notFound): print "Cannot find app with a id: " + sys.argv[2]
+	
 elif sys.argv[1] == "loaclupdate":
 	print "under deveopment"
-"""	arggs = argv[2]
-	arggs.split(",")
-	for argg in arggs:
-		if argg == "version":
-				#Dothis
-		elif argg == "pakage":
-				#DoThis
-		elif argg == "name":
-				#DoThis
-		elif argg == "license":
-				#DoThis
-		elif argg == "tagline":
-				#DoThis
-		elif argg == "source":
-				#DoThis
-		elif argg == "icon":
-				#DoThis
-		elif argg == "description":
-				#DoThis
-		else:
-			print "The key: " + argg + " do not exsist in the repo, ignoring" """
 
-	
-def usage():
-	print "Usage:"
+else:
+	usage()
