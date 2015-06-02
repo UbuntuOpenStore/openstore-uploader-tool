@@ -4,6 +4,7 @@ import sys
 import os
 import shutil
 import openUapp
+from os.path import isfile
 
 uApp = openUapp.repo()
 uAppLocal = openUapp.local()
@@ -27,8 +28,17 @@ def usage():
 
 if len(sys.argv) <= 1:
 	usage()
+elif sys.argv[1] == "keys":
+	print "version, package, name, license, soucre, icon, description, author, category"
 elif sys.argv[1] == "update":
-	if len(sys.argv) <= 2:
+	if len(sys.argv) > 2:
+		if not uApp.hasApi():
+			print "You have not provided a API key"
+			sys.exit()
+		if not uApp.idExist(sys.argv):
+			print "The ID " + sys.argv[2] + " does not exsist"
+			sys.exit()
+		uApp.update["_id"] = uApp.get_idFromid(sys.argv[2])
 		arggs=sys.argv[3].split(",")
 		values=sys.argv[4].split(",")
 		gotOne=False
@@ -38,10 +48,13 @@ elif sys.argv[1] == "update":
 			if argg == "version":
 				uApp.update["version"] = values[i] 
 				gotOne=True
-			elif argg == "pakage":
-				#TODO: FILE CHEKCK IF EXSISTS FIRST
-				uApp.upload(values[i])
-				gotOne=True
+			elif argg == "package":
+				if os.path.isfile(values[i]):
+					uApp.upload(values[i])
+					gotOne=True
+				else:
+					print "The file " + values[i] + " do not exsist"  
+					sys.exit()
 			elif argg == "name":
 				uApp.update["name"] = values[i] 
 				gotOne=True
@@ -55,8 +68,12 @@ elif sys.argv[1] == "update":
 				uApp.update["source"] = values[i] 
 				gotOne=True
 			elif argg == "icon":
-				uApp.upload(values[i], True)
-				gotOne=True
+				if os.path.isfile(values[i]):
+					uApp.upload(values[i], True)
+					gotOne=True
+				else:
+					print "The file " + values[i] + " do not exsist"  
+					sys.exit()
 			elif argg == "description":
 				uApp.update["description"] = values[i] 
 				gotOne=True
@@ -67,10 +84,12 @@ elif sys.argv[1] == "update":
 				uApp.update["category"] = values[i] 
 				gotOne=True			
 			else:
-				print "The key '" + argg + "' do not exsist in the repo, ignoring"			
+				print "The key '" + argg + "' do not exsist, ignoring"			
 			i+=1
 		if gotOne:
-			print "YEAH"
+			print " "
+			print "After:"
+			print uApp.update
 			#uApp.update()
 		else:
 			usage()
@@ -78,8 +97,11 @@ elif sys.argv[1] == "update":
 		usage()
 				
 elif sys.argv[1] == "delete":
-	if len(sys.argv) <= 2:
-		if uApp.idExists(sys.argv[2]):
+	if len(sys.argv) > 2:
+		if not uApp.hasApi():
+			print "You have not provided a API key"
+			sys.exit()
+		if uApp.idExist(sys.argv[2]):
 			uApp.delete(uApp.get_idFromid(sys.argv[2]))
 			print "Deleted: " + sys.argv[2]
 		else:
@@ -88,7 +110,29 @@ elif sys.argv[1] == "delete":
 		usage()
 		
 elif sys.argv[1] == "new" or sys.argv[1] == "add":
-	print "under deveopment"
+	if not uApp.hasApi:
+		print "You have not provided a API key"
+		sys.exit()
+	uApp.update["author"] = raw_input("Author:")
+	uApp.update["category"] = raw_input("Category:")
+	uApp.update["description"] = raw_input("Description:")
+	icon = raw_input("Icon (file):")
+	while not os.path.isfile(icon):
+		print "The file " + icon + " do not exsist try agian"
+		pack = raw_input("Icon (file):")
+	uApp.upload(icon, True)
+	#TODO: Check if idExist
+	uApp.update["id"] = raw_input("ID:")
+	uApp.update["license"] = raw_input("License:")
+	uApp.update["name"] = raw_input("Name:")
+	pack = raw_input("Package (file):")
+	while not os.path.isfile(pack):
+		print "The file " + pack + " do not exsist try agian"
+		pack = raw_input("Package (file):")
+	uApp.upload(pack)
+	uApp.update["source"] = raw_input("Source:")
+	uApp.update["tagline"] = raw_input("Tagline:")
+	uApp.new()
 		 
 elif sys.argv[1] == "list":
 	uApp.get()
@@ -96,7 +140,7 @@ elif sys.argv[1] == "list":
 		print i["name"] + " | " + i["id"]
 		
 elif sys.argv[1] == "info":
-	if len(sys.argv) <= 2:
+	if len(sys.argv) > 2:
 		uApp.get()
 		notFound=True
 		for i in uApp.repo["data"]:
@@ -109,6 +153,8 @@ elif sys.argv[1] == "info":
 				print "Author: " + i["author"]
 				print "Category: " + i["category"]
 		if (notFound): print "Cannot find app with a id: " + sys.argv[2]
+	else:
+		print "Missing appID argument"
 	
 elif sys.argv[1] == "loaclupdate":
 	print "under deveopment"

@@ -1,4 +1,6 @@
 import urllib2, urllib, json
+from os import stat
+from os.path import basename
 
 class local:
 	def __init__(self):
@@ -36,6 +38,10 @@ class repo:
 		self.repo=""
 		self.update={}
 		self.api=""
+	
+	def hasApi(self):
+		if self.api == "": return False
+		else: return True
 		
 	def update(self):
 		url = self.repoUrl + "?apikey=" + self.api
@@ -46,8 +52,8 @@ class repo:
 		build.open(req)
 		
 	def new(self):
-		self.new["apikey"] = api
-		values = urllib2.urlencode(self.new)
+		self.update["apikey"] = self.api
+		values = urllib2.urlencode(self.update)
 		req = urllib2.Request(self.repoUrl, values)
 		urllib2.urlopen(req).read()
 		
@@ -68,19 +74,23 @@ class repo:
 			raise
 			
 	def upload(self, fil, icon=False):
-		from smartfile import BasicClient
-		api = BasicClient()
-		response = api.post('/path/data/openappstore/v1/', file=fil)
+		#from smartfile import BasicClient
+		filename = basename(fil)
+		filee = file(fil, 'rb')
+		#api = BasicClient()
+		#response = api.post('/path/data/openappstore/v1/', file=filee)
 		if self.debug: print "debug: "+response
 		if self.debug: print 'debug: https://file.ac/w-fprv1yrTM/' + filename
-		if not icon: self.repo["package"] = 'https://file.ac/w-fprv1yrTM/' + filename  
-		else: self.repo["icon"] = 'https://file.ac/w-fprv1yrTM/' + filename
+		if not icon: 
+			self.update["package"] = 'https://file.ac/w-fprv1yrTM/' + filename  
+			self.update["size"] = stat(fil).st_size
+		else: self.update["icon"] = 'https://file.ac/w-fprv1yrTM/' + filename
 		
-	def idExists(self, idd):
+	def idExist(self, idd):
 		if self.repo == "":
 			self.get()
 		for i in self.repo["data"]:
-			if i["id"] == appID:
+			if i["id"] == idd:
 				return True
 		return False
 		
@@ -88,7 +98,7 @@ class repo:
 		if self.repo == "":
 			self.get()
 		for i in self.repo["data"]:
-			if i["id"] == appID:
+			if i["id"] == idd:
 				return i['_id']
 		return ""
 	

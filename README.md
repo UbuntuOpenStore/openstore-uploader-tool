@@ -12,7 +12,7 @@ open-uapp list | List all Apps
 open-uapp info [app ID] Displays info about an App
 
 Examples:
-open-uapp update openstore.mzanetti name,version,pakage "testapp,0.1,build/package"
+open-uapp update openstore.mzanetti name,version,package "testapp,0.1,build/package"
 open-uapp new
 open-uapp delete openstore.mzanetti
 open-uapp list
