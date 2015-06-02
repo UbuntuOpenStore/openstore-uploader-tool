@@ -120,9 +120,7 @@ class repo:
 		for i in self.repo["data"]:
 			print i["id"]
 			if i["id"] == idd:
-				print "yeah?"
 				return True
-		print "False?"
 		return False
 		
 	def get_idFromid(self, idd):
