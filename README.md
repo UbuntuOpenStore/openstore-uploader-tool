@@ -13,7 +13,10 @@ open-uapp update [app ID] [keys splited by ,] "[values splited by , (in the same
 open-uapp new | Create a new app <br>
 open-uapp delete [app ID] | Delete an App <br>
 open-uapp list | List all Apps <br>
-open-uapp info [app ID] | Displays info about an App
+open-uapp info [app ID] | Displays info about an App <br>
+open-uapp config | List configs <br>
+open-uapp config [Config] [Value] | Edit config <br>
+open-uapp keys | List repo keys 
 
 ## Examples:
 
