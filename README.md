@@ -4,6 +4,7 @@ openstore (open.uappexplorer.com) manage tool
 ## Install
 
 ``` 
+pip install smartfile
 sudo ./setup.py install
 ```
 

@@ -119,28 +119,28 @@ elif sys.argv[1] == "config":
 		print "API: " + uApp.api
 		print "repoUrl: " + uApp.repoUrl
 	elif sys.argv[2] == "api":
-		if not len(sys.argv) > 3:
+		if len(sys.argv) <= 3:
 			print "You need to provide an api key"
 		else:
 			uApp.api = sys.argv[3]
 			uApp.saveConfig()
 			print "API successfully saved"
 	elif sys.argv[2] == "repoUrl":
-		if len(sys.argv) > 3:
+		if len(sys.argv) <= 3:
 			print "You need to provide an url"
 		else:
 			uApp.repoUrl = sys.argv[3]
 			uApp.saveConfig()
 			print "repoUrl successfully saved"
 	elif sys.argv[2] == "smartfileApi":
-		if len(sys.argv) > 3:
+		if len(sys.argv) <= 3:
 			print "You need to provide an SmartFile API key"
 		else:
 			uApp.smartApi = sys.argv[3]
 			uApp.saveConfig()
 			print "SmartFile API key successfully saved"
 	elif sys.argv[2] == "smartfilePassword":
-		if len(sys.argv) > 3:
+		if len(sys.argv) <= 3:
 			print "You need to provide an SmartFile API Password"
 		else:
 			uApp.smartPass = sys.argv[3]
@@ -173,7 +173,7 @@ elif sys.argv[1] == "new" or sys.argv[1] == "add":
 	icon = raw_input("Icon (file):")
 	while not os.path.isfile(icon):
 		print "The file " + icon + " do not exsist try agian"
-		pack = raw_input("Icon (file):")
+		icon = raw_input("Icon (file):")
 	uApp.upload(icon, True)
 	uApp.update["license"] = raw_input("License:")
 	pack = raw_input("Package (file):")
