@@ -95,6 +95,14 @@ class repo:
 		except:
 			print "Cannot fetch repo from url: " + self.repoUrl
 			raise
+			
+	def getName(self, idd):
+		if self.repo == "":
+			self.get()
+		for i in self.repo["data"]:
+			if i["id"] == idd:
+				return i["name"]
+		return "Not Found"
 		
 	def smartApiExist(self):
 		if self.smartApi == "" and self.smartPass == "": return False
@@ -110,15 +118,13 @@ class repo:
 		if self.debug: print 'debug: https://file.ac/w-fprv1yrTM/' + filename
 		if not icon: 
 			self.update["package"] = 'https://file.ac/w-fprv1yrTM/' + filename  
-			self.update["size"] = stat(fil).st_size
+			self.update["filesize"] = stat(fil).st_size
 		else: self.update["icon"] = 'https://file.ac/w-fprv1yrTM/' + filename
 		
 	def idExist(self, idd):
 		if self.repo == "":
 			self.get()
-		print idd
 		for i in self.repo["data"]:
-			print i["id"]
 			if i["id"] == idd:
 				return True
 		return False

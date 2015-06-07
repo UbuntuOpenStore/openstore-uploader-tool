@@ -44,7 +44,6 @@ elif sys.argv[1] == "update":
 		values=sys.argv[4].split(",")
 		gotOne=False
 		i=0
-		print arggs
 		for argg in arggs:
 			if argg == "version":
 				uApp.update["version"] = values[i] 
@@ -56,6 +55,10 @@ elif sys.argv[1] == "update":
 						print "Use 'open-uapp config smartfileApi' [api]"
 						print "Use 'open-uapp config smartfilePassword' [password]"
 						sys.exit()
+					uApp.update["version"] = raw_input("Version:")
+					while uApp.update["version"] == "":
+						print "Version is required."
+						uApp.update["version"] = raw_input("Version:")
 					uApp.upload(values[i])
 					gotOne=True
 				else:
@@ -94,7 +97,7 @@ elif sys.argv[1] == "update":
 			i+=1
 		if gotOne:
 			uApp.updateR()
-			print "Successfully Updated " + uApp.update['name']
+			print "Successfully Updated " + uApp.getName(sys.argv[2])
 		else:
 			usage()
 	else:
@@ -180,10 +183,15 @@ elif sys.argv[1] == "new" or sys.argv[1] == "add":
 	while not os.path.isfile(pack):
 		print "The file " + pack + " do not exsist try agian"
 		pack = raw_input("Package (file):")
-	uApp.upload(pack)
+	uApp.update["version"] = raw_input("Version:")
+	while uApp.update["version"] == "":
+		print "Version is required."
+		uApp.update["version"] = raw_input("Version:")
 	uApp.update["source"] = raw_input("Source:")
 	uApp.update["tagline"] = raw_input("Tagline:")
+	uApp.upload(pack)
 	uApp.new()
+	print " "
 	print "Successfully Added " + uApp.update["name"]
 		 
 elif sys.argv[1] == "list":
