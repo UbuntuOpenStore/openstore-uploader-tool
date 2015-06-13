@@ -29,7 +29,7 @@ def usage():
 if len(sys.argv) <= 1:
 	usage()
 elif sys.argv[1] == "keys":
-	print "version, package, name, license, soucre, icon, description, author, category"
+	print "license, source, description, category, tagline"
 elif sys.argv[1] == "update":
 	if len(sys.argv) > 2:
 		if not uApp.hasApi():
@@ -39,34 +39,11 @@ elif sys.argv[1] == "update":
 		if not uApp.idExist(sys.argv[2]):
 			print "The ID " + sys.argv[2] + " does not exsist"
 			sys.exit()
-		uApp.update["_id"] = uApp.get_idFromid(sys.argv[2])
 		arggs=sys.argv[3].split(",")
 		values=sys.argv[4].split(",")
 		gotOne=False
 		i=0
 		for argg in arggs:
-			if argg == "version":
-				uApp.update["version"] = values[i] 
-				gotOne=True
-			elif argg == "package":
-				if os.path.isfile(values[i]):
-					if not uApp.smartApiExist():
-						print "You have not provided a Smartfile api key and api password"
-						print "Use 'open-uapp config smartfileApi' [api]"
-						print "Use 'open-uapp config smartfilePassword' [password]"
-						sys.exit()
-					uApp.update["version"] = raw_input("Version:")
-					while uApp.update["version"] == "":
-						print "Version is required."
-						uApp.update["version"] = raw_input("Version:")
-					uApp.upload(values[i])
-					gotOne=True
-				else:
-					print "The file " + values[i] + " do not exsist"  
-					sys.exit()
-			elif argg == "name":
-				uApp.update["name"] = values[i] 
-				gotOne=True
 			elif argg == "license":
 				uApp.update["license"] = values[i] 
 				gotOne=True
@@ -76,18 +53,8 @@ elif sys.argv[1] == "update":
 			elif argg == "source":
 				uApp.update["source"] = values[i] 
 				gotOne=True
-			elif argg == "icon":
-				if os.path.isfile(values[i]):
-					uApp.upload(values[i], True)
-					gotOne=True
-				else:
-					print "The file " + values[i] + " do not exsist"  
-					sys.exit()
 			elif argg == "description":
 				uApp.update["description"] = values[i] 
-				gotOne=True
-			elif argg == "author":
-				uApp.update["author"] = values[i] 
 				gotOne=True
 			elif argg == "category":
 				uApp.update["category"] = values[i] 
@@ -110,7 +77,7 @@ elif sys.argv[1] == "delete":
 			print "Use 'open-uapp config api [key]' to set the api key"
 			sys.exit()
 		if uApp.idExist(sys.argv[2]):
-			uApp.delete(uApp.get_idFromid(sys.argv[2]))
+			uApp.delete(sys.argv[2])
 			print "Successfully Deleted " + sys.argv[2]
 		else:
 			print "The id " + sys.argv[2] + " do not exsist!"
@@ -135,64 +102,15 @@ elif sys.argv[1] == "config":
 			uApp.repoUrl = sys.argv[3]
 			uApp.saveConfig()
 			print "repoUrl successfully saved"
-	elif sys.argv[2] == "smartfileApi":
-		if len(sys.argv) <= 3:
-			print "You need to provide an SmartFile API key"
-		else:
-			uApp.smartApi = sys.argv[3]
-			uApp.saveConfig()
-			print "SmartFile API key successfully saved"
-	elif sys.argv[2] == "smartfilePassword":
-		if len(sys.argv) <= 3:
-			print "You need to provide an SmartFile API Password"
-		else:
-			uApp.smartPass = sys.argv[3]
-			uApp.saveConfig()
-			print "SmartFile API Password successfully saved"
 	else:
 		print "Cannot find the config " + sys.argv[2]
 
 elif sys.argv[1] == "new" or sys.argv[1] == "add":
-	if not uApp.smartApiExist():
-		print "You have not provided a Smartfile api key and api password"
-		print "Use 'open-uapp config smartfileApi' [api]"
-		print "Use 'open-uapp config smartfilePassword' [password]"
-		sys.exit()
-	if not uApp.hasApi():
-		print "You have not provided a API key"
-		print "Use 'open-uapp config api [key]' to set the api key"
-		sys.exit()
-	uApp.update["name"] = raw_input("Name:")
-	while uApp.update["name"] == "":
-		print "Name is required."
-		uApp.update["name"] = raw_input("Name:")
-	uApp.update["id"] = raw_input("ID:")
-	while uApp.update["id"] == "":
-		print "ID is required."
-		uApp.update["id"] = raw_input("ID:")
-	uApp.update["author"] = raw_input("Author:")
-	uApp.update["category"] = raw_input("Category:")
-	uApp.update["description"] = raw_input("Description:")
-	icon = raw_input("Icon (file):")
-	while not os.path.isfile(icon):
-		print "The file " + icon + " do not exsist try agian"
-		icon = raw_input("Icon (file):")
-	uApp.upload(icon, True)
-	uApp.update["license"] = raw_input("License:")
-	pack = raw_input("Package (file):")
-	while not os.path.isfile(pack):
-		print "The file " + pack + " do not exsist try agian"
-		pack = raw_input("Package (file):")
-	uApp.update["version"] = raw_input("Version:")
-	while uApp.update["version"] == "":
-		print "Version is required."
-		uApp.update["version"] = raw_input("Version:")
-	uApp.update["source"] = raw_input("Source:")
-	uApp.update["tagline"] = raw_input("Tagline:")
-	uApp.upload(pack)
-	uApp.new()
-	print " "
-	print "Successfully Added " + uApp.update["name"]
+	if sys.argv > 2:
+		if not os.path.isfile(sys.argv[2]):
+			print "The file " + sys.argv[2] + " do not exsist."
+		uApp.new(sys.argv[2])
+		print "Successfully Added " + uApp.getName
 		 
 elif sys.argv[1] == "list":
 	uApp.get()

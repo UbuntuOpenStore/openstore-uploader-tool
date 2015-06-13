@@ -54,8 +54,6 @@ class repo:
 			conf.read(getenv("HOME")+"/.openuapp/conf.conf")
 			self.repoUrl = conf.get("Repo", "repoUrl")
 			self.api = conf.get("Repo", "API")
-			self.smartApi = conf.get("SmartFile", "API")
-			self.smartPass = conf.get("SmartFile", "Pass")
 			
 	def saveConfig(self):
 		conf = ConfigParser.ConfigParser()
@@ -64,9 +62,6 @@ class repo:
 		conf.add_section('Repo')
 		conf.set('Repo','repoUrl', self.repoUrl)
 		conf.set('Repo','API', self.api)
-		conf.add_section('SmartFile')
-		conf.set('SmartFile','API', self.smartApi)
-		conf.set('SmartFile','Pass', self.smartPass)
 		conf.write(cfgfile)
 		cfgfile.close()
 		
@@ -74,21 +69,23 @@ class repo:
 		if self.api == "": return False
 		else: return True
 		
-	def updateR(self):
-		url = self.repoUrl + "?apikey=" + self.api
-		requests.put(url, data=self.update)
+	def updateR(self, fil, _id):
+		if not os.path.isfile(fil):
+			raise ValueError("%s does not exist", fil)
+		files = {'file': open(fil, 'rb')}
+		url = self.repoUrl+"/"+_id+"/?apikey=" + self.api
+		requests.put(url, files=files)
 		
-	def new(self):
-		self.update["apikey"] = self.api
-		values = urllib.urlencode(self.update)
-		req = urllib2.Request(self.repoUrl, values)
-		urllib2.urlopen(req).read()
+	def new(self, fil):
+		if not os.path.isfile(fil):
+			raise ValueError("%s does not exist", fil)
+		files = {'file': open(fil, 'rb')}
+		url = self.repoUrl + "?apikey=" + self.api
+		requests.post(url, files=files)
 		
 	def delete(self, _id):
-		url = self.repoUrl + "?apikey=" + self.api
-		data = {}
-		data["_id"] = _id
-		requests.delete(url, data=data)
+		url = self.repoUrl+"/"+_id+"/?apikey=" + self.api
+		requests.delete(url)
 				
 	def get(self):
 		try: self.repo = json.loads(urllib2.urlopen(self.repoUrl).read())
@@ -96,31 +93,14 @@ class repo:
 			print "Cannot fetch repo from url: " + self.repoUrl
 			raise
 			
-	def getName(self, idd):
+	def get(self, idd):
 		if self.repo == "":
 			self.get()
 		for i in self.repo["data"]:
 			if i["id"] == idd:
 				return i["name"]
 		return "Not Found"
-		
-	def smartApiExist(self):
-		if self.smartApi == "" and self.smartPass == "": return False
-		else: return True	
-			
-	def upload(self, fil, icon=False):
-		from smartfile import BasicClient
-		filename = basename(fil)
-		filee = file(fil, 'rb')
-		api = BasicClient(self.smartApi, self.smartPass)
-		response = api.post('/path/data/openappstore/v1/', file=filee)
-		if self.debug: print "debug: "+response
-		if self.debug: print 'debug: https://file.ac/w-fprv1yrTM/' + filename
-		if not icon: 
-			self.update["package"] = 'https://file.ac/w-fprv1yrTM/' + filename  
-			self.update["filesize"] = stat(fil).st_size
-		else: self.update["icon"] = 'https://file.ac/w-fprv1yrTM/' + filename
-		
+
 	def idExist(self, idd):
 		if self.repo == "":
 			self.get()
@@ -128,13 +108,3 @@ class repo:
 			if i["id"] == idd:
 				return True
 		return False
-		
-	def get_idFromid(self, idd):
-		if self.repo == "":
-			self.get()
-		for i in self.repo["data"]:
-			if i["id"] == idd:
-				return i['_id']
-		return ""
-	
-
