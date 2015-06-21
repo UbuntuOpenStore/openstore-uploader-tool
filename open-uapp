@@ -7,19 +7,18 @@ import openUapp
 from os.path import isfile
 
 uApp = openUapp.repo()
-uAppLocal = openUapp.local()
 
 def usage():
 	print 'Usage:'	
-	print 'open-uapp update [app ID] [keys splited by ,] "[values splited by , (in the same order as keys)]" | Edit an app'
-	print 'open-uapp new | Create a new app'
+	print 'open-uapp update [Click package] [Optional keys splited by ,,] "[Optional values splited by ,, (in the same order as keys)]" | Edit an app'
+	print 'open-uapp new [Click package] | Create a new app'
 	print 'open-uapp delete [app ID] | Delete an App'
 	print 'open-uapp list | List all Apps'
 	print 'open-uapp info [app ID] Displays info about an App'
 	print ' '
 	print 'Examples:'
-	print 'open-uapp update openstore.mzanetti name,version,pakage "testapp,0.1,build/package"'
-	print 'open-uapp new'
+	print 'open-uapp update mycoolapp.click license "GPL"'
+	print 'open-uapp new mycoolapp.click'
 	print 'open-uapp delete openstore.mzanetti'
 	print 'open-uapp list'
 	print 'open-uapp info openstore.mzanetti'
@@ -30,43 +29,35 @@ if len(sys.argv) <= 1:
 	usage()
 elif sys.argv[1] == "keys":
 	print "license, source, description, category, tagline"
+	
 elif sys.argv[1] == "update":
 	if len(sys.argv) > 2:
 		if not uApp.hasApi():
 			print "You have not provided a API key"
 			print "Use 'open-uapp config api [key]' to set the api key"
 			sys.exit()
-		if not uApp.idExist(sys.argv[2]):
-			print "The ID " + sys.argv[2] + " does not exsist"
-			sys.exit()
-		arggs=sys.argv[3].split(",")
-		values=sys.argv[4].split(",")
-		gotOne=False
-		i=0
-		for argg in arggs:
-			elif argg == "license":
-				uApp.update["license"] = values[i] 
-				gotOne=True
-			elif argg == "tagline":
-				uApp.update["tagline"] = values[i] 
-				gotOne=True
-			elif argg == "source":
-				uApp.update["source"] = values[i] 
-				gotOne=True
-			elif argg == "description":
-				uApp.update["description"] = values[i] 
-				gotOne=True
-			elif argg == "category":
-				uApp.update["category"] = values[i] 
-				gotOne=True			
-			else:
-				print "The key '" + argg + "' do not exsist, ignoring"			
-			i+=1
-		if gotOne:
-			uApp.updateR()
-			print "Successfully Updated " + uApp.getName(sys.argv[2])
-		else:
-			usage()
+		if len(sys.argv) > 3:
+			arggs=sys.argv[3].split(",,")
+			values=sys.argv[4].split(",,")
+			i=0
+			for argg in arggs:
+				if argg == "license":
+					uApp.update["license"] = values[i] 
+				elif argg == "tagline":
+					uApp.update["tagline"] = values[i] 
+				elif argg == "source":
+					uApp.update["source"] = values[i] 
+				elif argg == "description":
+					uApp.update["description"] = values[i] 
+				elif argg == "category":
+					uApp.update["category"] = values[i] 	
+				else:
+					print "The key '" + argg + "' do not exsist, ignoring"			
+				i+=1
+		try:
+			uApp.updateR(sys.argv[2])
+			print "Successfully Updated " + uApp.click["name"]
+		except ValueError as e: print e.value
 	else:
 		usage()
 				
@@ -76,11 +67,10 @@ elif sys.argv[1] == "delete":
 			print "You have not provided a API key"
 			print "Use 'open-uapp config api [key]' to set the api key"
 			sys.exit()
-		if uApp.idExist(sys.argv[2]):
+		try:
 			uApp.delete(sys.argv[2])
 			print "Successfully Deleted " + sys.argv[2]
-		else:
-			print "The id " + sys.argv[2] + " do not exsist!"
+		except ValueError as e: print e.value
 	else:
 		usage()
 elif sys.argv[1] == "config":
@@ -106,36 +96,55 @@ elif sys.argv[1] == "config":
 		print "Cannot find the config " + sys.argv[2]
 
 elif sys.argv[1] == "new" or sys.argv[1] == "add":
+	if not uApp.hasApi():
+		print "You have not provided a API key"
+		print "Use 'open-uapp config api [key]' to set the api key"
+		sys.exit()
 	if sys.argv > 2:
-		if not os.path.isfile(sys.argv[2]):
-			print "The file " + sys.argv[2] + " do not exsist."
-		uApp.new(sys.argv[2])
-		print "Successfully Added " + uApp.getName
+		if len(sys.argv) > 3:
+			arggs=sys.argv[3].split(",,")
+			values=sys.argv[4].split(",,")
+			i=0
+			for argg in arggs:
+				if argg == "license":
+					uApp.update["license"] = values[i] 
+				elif argg == "tagline":
+					uApp.update["tagline"] = values[i] 
+				elif argg == "source":
+					uApp.update["source"] = values[i] 
+				elif argg == "description":
+					uApp.update["description"] = values[i] 
+				elif argg == "category":
+					uApp.update["category"] = values[i] 	
+				else:
+					print "The key '" + argg + "' do not exsist, ignoring"			
+				i+=1
+		try: 
+			uApp.new(sys.argv[2])
+			print "Successfully Added new package"
+		except ValueError as e: print e.value
 		 
 elif sys.argv[1] == "list":
-	uApp.get()
+	uApp.fetch()
 	for i in uApp.repo["data"]:
 		print i["name"] + " | " + i["id"]
 		
 elif sys.argv[1] == "info":
 	if len(sys.argv) > 2:
-		uApp.get()
+		uApp.fetch()
 		notFound=True
 		for i in uApp.repo["data"]:
 			if sys.argv[2] == i["id"]:
 				notFound=False
-				print "Name: " + i["name"]
-				print "Description: " + i["description"]
-				print "Tagline: " + i["tagline"]
-				print "License: " + i["license"]
-				print "Author: " + i["author"]
-				print "Category: " + i["category"]
+				if not i["name"] == "": print "Name: " + i["name"]
+				if not i["description"] == "": print "Description: " + i["description"]
+				if not i["tagline"] == "": print "Tagline: " + i["tagline"]
+				if not i["license"] == "": print "License: " + i["license"]
+				if not i["author"] == "": print "Author: " + i["author"]
+				if not i["category"] == "": print "Category: " + i["category"]
 		if (notFound): print "Cannot find app with a id: " + sys.argv[2]
 	else:
 		print "Missing appID argument"
-	
-elif sys.argv[1] == "loaclupdate":
-	print "under deveopment"
 
 else:
 	usage()

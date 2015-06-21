@@ -3,6 +3,8 @@ from os import stat, getenv, makedirs
 from os.path import basename, isdir, isfile
 import ConfigParser
 import requests
+import os
+import tarfile
 
 class local:
 	def __init__(self):
@@ -10,6 +12,7 @@ class local:
 		self.debug=False
 		self.repoJson=""
 		self.repo=""
+		self.click=""
 	
 	def localUpdateJson(appID, name, value):
 		r = self.repoJson
@@ -39,8 +42,7 @@ class repo:
 		self.repo=""
 		self.update={}
 		self.api=""
-		self.smartApi=""
-		self.smartPass=""
+		self.click=""
 		self.loadConfig()
 		
 	def loadConfig(self):
@@ -69,42 +71,73 @@ class repo:
 		if self.api == "": return False
 		else: return True
 		
-	def updateR(self, fil, _id):
+	def updateR(self, fil):
 		if not os.path.isfile(fil):
-			raise ValueError("%s does not exist", fil)
+			raise Exception("%s does not exist", fil)
+		self.readClick(fil)
+		if not self.idExist(self.click["name"]):
+			raise ValueError("The id %s does not exist on the server", self.click["name"])
 		files = {'file': open(fil, 'rb')}
-		url = self.repoUrl+"/"+_id+"/?apikey=" + self.api
-		requests.put(url, files=files)
+		url = self.repoUrl+"/"+self.click["name"]+"/?apikey=" + self.api
+		try:
+			if self.update == "":				
+				r=requests.put(url, files=files)
+			else:
+				r=requests.put(url, files=files, data=self.update)
+			print r
+		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 		
 	def new(self, fil):
 		if not os.path.isfile(fil):
 			raise ValueError("%s does not exist", fil)
 		files = {'file': open(fil, 'rb')}
 		url = self.repoUrl + "?apikey=" + self.api
-		requests.post(url, files=files)
+		try: 
+			if self.update == "":
+				r=requests.post(url, files=files)
+			else:
+				r=requests.post(url, files=files, data=self.update)
+			print r
+		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 		
 	def delete(self, _id):
+		if not self.idExist(_id):
+			raise ValueError("The id %s does not exit...", _id)
 		url = self.repoUrl+"/"+_id+"/?apikey=" + self.api
-		requests.delete(url)
+		try: requests.delete(url)
+		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 				
-	def get(self):
+	def fetch(self):
 		try: self.repo = json.loads(urllib2.urlopen(self.repoUrl).read())
-		except:
-			print "Cannot fetch repo from url: " + self.repoUrl
-			raise
+		except: raise ValueError("Cannot fetch repo from url: %s", self.repoUrl)
 			
-	def get(self, idd):
-		if self.repo == "":
-			self.get()
+	def getNameFromId(self, _id):
+		if not self.idExist(_id):
+			raise ValueError("The id %s does not exit...", _id)
 		for i in self.repo["data"]:
 			if i["id"] == idd:
 				return i["name"]
-		return "Not Found"
+		return "Null"
 
 	def idExist(self, idd):
 		if self.repo == "":
-			self.get()
+			self.fetch()
 		for i in self.repo["data"]:
 			if i["id"] == idd:
 				return True
 		return False
+		
+	def readClick(self, fil):
+		cdback = os.getcwd()
+		os.chdir("/tmp")
+		os.system("mkdir uapp")
+		os.chdir(cdback)
+		os.system("cp "+fil+" /tmp/uapp/o.click")
+		os.chdir("/tmp/uapp")
+		os.system("ar vx o.click")
+		tar = tarfile.open("control.tar.gz")
+		f=tar.extractfile(tar.getmember("./manifest"))
+		self.click = json.loads(f.read())
+		os.system("rm -r /tmp/uapp")
+		os.chdir(cdback)
+		

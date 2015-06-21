@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='open-uApp',
-      version='0.3',
+      version='0.4',
       description='A tool for manage the repo of the OpenStore app for Ubuntu touch',
       author='Marius Gripsgard',
       author_email='me@mariogrip.com',
