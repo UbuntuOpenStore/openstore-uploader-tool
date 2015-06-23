@@ -1,5 +1,3 @@
-# This branch is a under deveopment...
-
 # open-uapp-tool
 openstore (open.uappexplorer.com) manage tool
 
