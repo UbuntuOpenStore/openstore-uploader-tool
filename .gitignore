@@ -2,3 +2,5 @@
 *~
 build
 test
+*.click
+*test*

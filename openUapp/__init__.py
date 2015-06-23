@@ -3,6 +3,8 @@ from os import stat, getenv, makedirs
 from os.path import basename, isdir, isfile
 import ConfigParser
 import requests
+import os
+import tarfile
 
 class local:
 	def __init__(self):
@@ -10,6 +12,7 @@ class local:
 		self.debug=False
 		self.repoJson=""
 		self.repo=""
+		self.click=""
 	
 	def localUpdateJson(appID, name, value):
 		r = self.repoJson
@@ -39,8 +42,8 @@ class repo:
 		self.repo=""
 		self.update={}
 		self.api=""
-		self.smartApi=""
-		self.smartPass=""
+		self.click=""
+		self._id=""
 		self.loadConfig()
 		
 	def loadConfig(self):
@@ -54,8 +57,6 @@ class repo:
 			conf.read(getenv("HOME")+"/.openuapp/conf.conf")
 			self.repoUrl = conf.get("Repo", "repoUrl")
 			self.api = conf.get("Repo", "API")
-			self.smartApi = conf.get("SmartFile", "API")
-			self.smartPass = conf.get("SmartFile", "Pass")
 			
 	def saveConfig(self):
 		conf = ConfigParser.ConfigParser()
@@ -64,9 +65,6 @@ class repo:
 		conf.add_section('Repo')
 		conf.set('Repo','repoUrl', self.repoUrl)
 		conf.set('Repo','API', self.api)
-		conf.add_section('SmartFile')
-		conf.set('SmartFile','API', self.smartApi)
-		conf.set('SmartFile','Pass', self.smartPass)
 		conf.write(cfgfile)
 		cfgfile.close()
 		
@@ -74,67 +72,80 @@ class repo:
 		if self.api == "": return False
 		else: return True
 		
-	def updateR(self):
-		url = self.repoUrl + "?apikey=" + self.api
-		requests.put(url, data=self.update)
+	def updateR(self, fil):
+		isFile=True
+		if not os.path.isfile(fil):
+			if not self.idExist(fil):
+				raise Exception("%s does not exist", fil)
+			isFile=False
+			self._id=fil
+		if isFile: 
+			self.readClick(fil)
+			if not self.idExist(self.click["name"]):
+				raise ValueError("The id %s does not exist on the server", self.click["name"])
+			self._id=self.click["name"]
+			files = {'file': open(fil, 'rb')}
+		url = self.repoUrl+"/"+self._id+"/?apikey=" + self.api
+		try:
+			if self.update == "" and isFile:				
+				r=requests.put(url, files=files)
+			elif not isFile:
+				r=requests.put(url, data=self.update)
+			else:
+				r=requests.put(url, files=files, data=self.update)
+		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 		
-	def new(self):
-		self.update["apikey"] = self.api
-		values = urllib.urlencode(self.update)
-		req = urllib2.Request(self.repoUrl, values)
-		urllib2.urlopen(req).read()
+	def new(self, fil):
+		if not os.path.isfile(fil):
+			raise ValueError("%s does not exist", fil)
+		files = {'file': open(fil, 'rb')}
+		url = self.repoUrl + "?apikey=" + self.api
+		try: 
+			if self.update == "":
+				r=requests.post(url, files=files)
+			else:
+				r=requests.post(url, files=files, data=self.update)
+			print r
+		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 		
 	def delete(self, _id):
-		url = self.repoUrl + "?apikey=" + self.api
-		data = {}
-		data["_id"] = _id
-		requests.delete(url, data=data)
+		if not self.idExist(_id):
+			raise ValueError("The id %s does not exit...", _id)
+		url = self.repoUrl+"/"+_id+"/?apikey=" + self.api
+		try: requests.delete(url)
+		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 				
-	def get(self):
+	def fetch(self):
 		try: self.repo = json.loads(urllib2.urlopen(self.repoUrl).read())
-		except:
-			print "Cannot fetch repo from url: " + self.repoUrl
-			raise
+		except: raise ValueError("Cannot fetch repo from url: %s", self.repoUrl)
 			
-	def getName(self, idd):
-		if self.repo == "":
-			self.get()
+	def getNameFromId(self, _id):
+		if not self.idExist(_id):
+			raise ValueError("The id %s does not exit...", _id)
 		for i in self.repo["data"]:
 			if i["id"] == idd:
 				return i["name"]
-		return "Not Found"
-		
-	def smartApiExist(self):
-		if self.smartApi == "" and self.smartPass == "": return False
-		else: return True	
-			
-	def upload(self, fil, icon=False):
-		from smartfile import BasicClient
-		filename = basename(fil)
-		filee = file(fil, 'rb')
-		api = BasicClient(self.smartApi, self.smartPass)
-		response = api.post('/path/data/openappstore/v1/', file=filee)
-		if self.debug: print "debug: "+response
-		if self.debug: print 'debug: https://file.ac/w-fprv1yrTM/' + filename
-		if not icon: 
-			self.update["package"] = 'https://file.ac/w-fprv1yrTM/' + filename  
-			self.update["filesize"] = stat(fil).st_size
-		else: self.update["icon"] = 'https://file.ac/w-fprv1yrTM/' + filename
-		
+		return "Null"
+
 	def idExist(self, idd):
 		if self.repo == "":
-			self.get()
+			self.fetch()
 		for i in self.repo["data"]:
 			if i["id"] == idd:
 				return True
 		return False
 		
-	def get_idFromid(self, idd):
-		if self.repo == "":
-			self.get()
-		for i in self.repo["data"]:
-			if i["id"] == idd:
-				return i['_id']
-		return ""
-	
-
+	def readClick(self, fil):
+		cdback = os.getcwd()
+		os.chdir("/tmp")
+		os.system("mkdir uapp")
+		os.chdir(cdback)
+		os.system("cp "+fil+" /tmp/uapp/o.click")
+		os.chdir("/tmp/uapp")
+		os.system("ar vx o.click > /dev/null 2>&1")
+		tar = tarfile.open("control.tar.gz")
+		f=tar.extractfile(tar.getmember("./manifest"))
+		self.click = json.loads(f.read())
+		os.system("rm -r /tmp/uapp")
+		os.chdir(cdback)
+		
