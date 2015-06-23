@@ -43,6 +43,7 @@ class repo:
 		self.update={}
 		self.api=""
 		self.click=""
+		self._id=""
 		self.loadConfig()
 		
 	def loadConfig(self):
@@ -72,19 +73,26 @@ class repo:
 		else: return True
 		
 	def updateR(self, fil):
+		isFile=True
 		if not os.path.isfile(fil):
-			raise Exception("%s does not exist", fil)
-		self.readClick(fil)
-		if not self.idExist(self.click["name"]):
-			raise ValueError("The id %s does not exist on the server", self.click["name"])
-		files = {'file': open(fil, 'rb')}
-		url = self.repoUrl+"/"+self.click["name"]+"/?apikey=" + self.api
+			if not self.idExist(fil):
+				raise Exception("%s does not exist", fil)
+			isFile=False
+			self._id=fil
+		if isFile: 
+			self.readClick(fil)
+			if not self.idExist(self.click["name"]):
+				raise ValueError("The id %s does not exist on the server", self.click["name"])
+			self._id=self.click["name"]
+			files = {'file': open(fil, 'rb')}
+		url = self.repoUrl+"/"+self._id+"/?apikey=" + self.api
 		try:
-			if self.update == "":				
+			if self.update == "" and isFile:				
 				r=requests.put(url, files=files)
+			elif not isFile:
+				r=requests.put(url, data=self.update)
 			else:
 				r=requests.put(url, files=files, data=self.update)
-			print r
 		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 		
 	def new(self, fil):
@@ -134,7 +142,7 @@ class repo:
 		os.chdir(cdback)
 		os.system("cp "+fil+" /tmp/uapp/o.click")
 		os.chdir("/tmp/uapp")
-		os.system("ar vx o.click")
+		os.system("ar vx o.click > /dev/null 2>&1")
 		tar = tarfile.open("control.tar.gz")
 		f=tar.extractfile(tar.getmember("./manifest"))
 		self.click = json.loads(f.read())
