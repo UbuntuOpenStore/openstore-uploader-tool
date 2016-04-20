@@ -2,9 +2,7 @@ import urllib2, urllib, json
 from os import stat, getenv, makedirs
 from os.path import basename, isdir, isfile
 import ConfigParser
-import requests
-import os
-import tarfile
+import shutil, tarfile, os, requests
 
 class local:
 	def __init__(self):
@@ -13,7 +11,7 @@ class local:
 		self.repoJson=""
 		self.repo=""
 		self.click=""
-	
+
 	def localUpdateJson(appID, name, value):
 		r = self.repoJson
 		b = []
@@ -24,19 +22,19 @@ class local:
 			b.append(i)
 		e["data"] = b
 		self.repo = e
-		
+
 	def openFile(self):
 		f = open(self.localFile, "r")
 		return f.read()
-	
+
 	def writeFile(self):
 		self.repoJson = json.dumps(self.repo)
 		f = open(self.localFile, "w")
 		f.write(self.repoJson)
-		
+
 class repo:
 	def __init__(self):
-		self.repoUrl="https://open.uappexplorer.com/api/apps" 
+		self.repoUrl="https://open.uappexplorer.com/api/apps"
 		self.local=False
 		self.debug=False
 		self.repo=""
@@ -45,7 +43,7 @@ class repo:
 		self.click=""
 		self._id=""
 		self.loadConfig()
-		
+
 	def loadConfig(self):
 		conf = ConfigParser.ConfigParser()
 		self.conf = conf
@@ -57,7 +55,7 @@ class repo:
 			conf.read(getenv("HOME")+"/.openuapp/conf.conf")
 			self.repoUrl = conf.get("Repo", "repoUrl")
 			self.api = conf.get("Repo", "API")
-			
+
 	def saveConfig(self):
 		conf = ConfigParser.ConfigParser()
 		self.conf = conf
@@ -67,11 +65,11 @@ class repo:
 		conf.set('Repo','API', self.api)
 		conf.write(cfgfile)
 		cfgfile.close()
-		
+
 	def hasApi(self):
 		if self.api == "": return False
 		else: return True
-		
+
 	def updateR(self, fil):
 		isFile=True
 		if not os.path.isfile(fil):
@@ -79,7 +77,7 @@ class repo:
 				raise Exception("%s does not exist", fil)
 			isFile=False
 			self._id=fil
-		if isFile: 
+		if isFile:
 			self.readClick(fil)
 			if not self.idExist(self.click["name"]):
 				raise ValueError("The id %s does not exist on the server", self.click["name"])
@@ -87,38 +85,38 @@ class repo:
 			files = {'file': open(fil, 'rb')}
 		url = self.repoUrl+"/"+self._id+"/?apikey=" + self.api
 		try:
-			if self.update == "" and isFile:				
+			if self.update == "" and isFile:
 				r=requests.put(url, files=files)
 			elif not isFile:
 				r=requests.put(url, data=self.update)
 			else:
 				r=requests.put(url, files=files, data=self.update)
 		except: raise ValueError("Faled to connect to the server or the server returned with an error")
-		
+
 	def new(self, fil):
 		if not os.path.isfile(fil):
 			raise ValueError("%s does not exist", fil)
 		files = {'file': open(fil, 'rb')}
 		url = self.repoUrl + "?apikey=" + self.api
-		try: 
+		try:
 			if self.update == "":
 				r=requests.post(url, files=files)
 			else:
 				r=requests.post(url, files=files, data=self.update)
 			print r
 		except: raise ValueError("Faled to connect to the server or the server returned with an error")
-		
+
 	def delete(self, _id):
 		if not self.idExist(_id):
 			raise ValueError("The id %s does not exit...", _id)
 		url = self.repoUrl+"/"+_id+"/?apikey=" + self.api
 		try: requests.delete(url)
 		except: raise ValueError("Faled to connect to the server or the server returned with an error")
-				
+
 	def fetch(self):
 		try: self.repo = json.loads(urllib2.urlopen(self.repoUrl).read())
 		except: raise ValueError("Cannot fetch repo from url: %s", self.repoUrl)
-			
+
 	def getNameFromId(self, _id):
 		if not self.idExist(_id):
 			raise ValueError("The id %s does not exit...", _id)
@@ -134,13 +132,13 @@ class repo:
 			if i["id"] == idd:
 				return True
 		return False
-		
+
 	def readClick(self, fil):
 		cdback = os.getcwd()
 		os.chdir("/tmp")
-		os.system("mkdir uapp")
+		os.makedirs("uapp")
 		os.chdir(cdback)
-		os.system("cp "+fil+" /tmp/uapp/o.click")
+		shutil.copyfile(fil, "/tmp/uapp/o.click")
 		os.chdir("/tmp/uapp")
 		os.system("ar vx o.click > /dev/null 2>&1")
 		tar = tarfile.open("control.tar.gz")
@@ -148,4 +146,3 @@ class repo:
 		self.click = json.loads(f.read())
 		os.system("rm -r /tmp/uapp")
 		os.chdir(cdback)
-		
