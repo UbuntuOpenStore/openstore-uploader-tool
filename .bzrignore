@@ -1,0 +1,11 @@
+*.pyc
+*~
+build
+test
+*.click
+*test*
+.snap
+parts
+snap
+stage
+open-uapp_0.1_multi.snap

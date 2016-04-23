@@ -70,7 +70,7 @@ class repo:
 		if self.api == "": return False
 		else: return True
 
-	def updateR(self, fil):
+	def updateR(self, fil, force=False):
 		isFile=True
 		if not os.path.isfile(fil):
 			if not self.idExist(fil):
@@ -81,6 +81,11 @@ class repo:
 			self.readClick(fil)
 			if not self.idExist(self.click["name"]):
 				raise ValueError("The id %s does not exist on the server", self.click["name"])
+			if not self.isNeverVersion(self.click["name"], self.click["version"]):
+				if force:
+					print("There is a never or equal version already published, but pushing as you wanted")
+				else:
+					raise ValueError("These is a never or equal version already published, use --force to push anyway")
 			self._id=self.click["name"]
 			files = {'file': open(fil, 'rb')}
 		url = self.repoUrl+"/"+self._id+"/?apikey=" + self.api
@@ -103,7 +108,6 @@ class repo:
 				r=requests.post(url, files=files)
 			else:
 				r=requests.post(url, files=files, data=self.update)
-			print r
 		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 
 	def delete(self, _id):
@@ -131,6 +135,15 @@ class repo:
 		for i in self.repo["data"]:
 			if i["id"] == idd:
 				return True
+		return False
+
+	def isNeverVersion(self, idd, version):
+		if self.repo == "":
+			self.fetch()
+		for i in self.repo["data"]:
+			if i["id"] == idd:
+				if i["version"].replace(".", "") < version.replace(".", ""):
+					return True
 		return False
 
 	def readClick(self, fil):

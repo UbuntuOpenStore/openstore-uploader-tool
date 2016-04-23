@@ -6,6 +6,8 @@ import shutil
 import openUapp
 from os.path import isfile
 
+import urllib2, requests
+
 uApp = openUapp.repo()
 args = {"-m": ["--changelog", "-m"], "-l": ["--license", "-l"], "-s": ["--source", "-s"], "-d": ["--description", "-d"], "-c": ["--category", "-c"], "-t": ["--tagline", "-t"]}
 
@@ -30,11 +32,10 @@ def usage():
 
 if len(sys.argv) <= 1:
 	usage()
-elif sys.argv[1] == "keys":
-	print "license, source, description, category, tagline"
 
 elif sys.argv[1] == "update":
 	if len(sys.argv) > 2:
+		force=False
 		if not uApp.hasApi():
 			print "You have not provided a API key"
 			print "Use 'open-uapp config api [key]' to set the api key"
@@ -65,11 +66,13 @@ elif sys.argv[1] == "update":
 				elif arg in args["-m"]:
 					uApp.update["changelog"] = sys.argv[index+1]
 					skip=True
+				elif arg == "--force":
+					force=True
 				else:
 					print "The '" + arg + "' argument do not exsist"
 					sys.exit()
 		try:
-			uApp.updateR(sys.argv[2])
+			uApp.updateR(sys.argv[2], force)
 			print "Successfully Updated " + uApp._id
 		except ValueError as e: print e[0]
 	else:
