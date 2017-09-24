@@ -47,6 +47,12 @@ class repo:
 	def loadConfig(self):
 		conf = ConfigParser.ConfigParser()
 		self.conf = conf
+
+		if 'OPENSTORE_API_KEY' in os.environ:
+			self.api = os.environ.get('OPENSTORE_API_KEY', '')
+			self.repoUrl = os.environ.get('OPENSTORE_REPO_URL', '')
+			return
+
 		if not isdir(getenv("HOME")+"/.openuapp"):
 			makedirs(getenv("HOME")+"/.openuapp")
 		if not isfile(getenv("HOME")+"/.openuapp/conf.conf"):
