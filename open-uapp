@@ -3,189 +3,144 @@
 import sys
 import os
 import shutil
+import argparse
 import openUapp
 from os.path import isfile
-
 import urllib, requests
 
+class MyParser(argparse.ArgumentParser):
+    def error(self, message):
+        self.print_help()
+        sys.exit(2)
+
+parser = MyParser(description="This is the CLI tool for the OpenStore app store service. Manage or search apps for your Ubuntu Touch device.",
+		usage="'open-uapp <command>'",
+		epilog="Run 'open-uapp <command> help' to see the options available for each command.")
+
+subparsers = parser.add_subparsers(dest='cmd', title="Commands")
+
+# Argument parser: upload command
+parser_upload = subparsers.add_parser('upload', help="Push a new package to the OpenStore server, as update or new submission.")
+parser_upload.add_argument('file_path', type=str, help="The path of the .click package")
+parser_upload.add_argument('-y', '--yes', dest='force_yes', action='store_true', help="Automatic yes to prompts. Assume \"yes\" as answer to all prompts and run non-interactively.")
+
+# Argument parser: update-info command
+parser_update_info = subparsers.add_parser('update-info', help="Update remote informations of a package on the OpenStore server")
+parser_update_info.add_argument('app_id', type=str, help="The appId of the .click package")
+parser_update_info.add_argument('-c', '--changelog', dest='changelog', type=str, help="Update changelog field on server")
+parser_update_info.add_argument('-d', '--description', dest='description', type=str, help="Update description field on server")
+parser_update_info.add_argument('-g', '--category', dest='category', type=str, help="Update category field on server")
+parser_update_info.add_argument('-l', '--license', dest='license', type=str, help="Update license field on server")
+parser_update_info.add_argument('-p', '--publish', dest='publish', action='store_true', help="Publish the package")
+parser_update_info.add_argument('-s', '--source', dest='source', type=str, help="Update source code url field on server")
+parser_update_info.add_argument('-t', '--tagline', dest='tagline', type=str, help="Update tagline field on server")
+parser_update_info.add_argument('-u', '--unpublish', dest='unpublish', action='store_true', help="Unpublish the package")
+parser_update_info.add_argument('-y', '--yes', dest='force_yes', action='store_true', help="Automatic yes to prompts. Assume \"yes\" as answer to all prompts and run non-interactively.")
+
+# Argument parser: search command
+parser_search = subparsers.add_parser('search', help="Search an application available on the store (by its id, name, keyword, or description")
+parser_search.add_argument('query', type=str, help="The query of the search")
+
+# Argument parser: info command
+parser_info = subparsers.add_parser('info', help="Display information available for a single application")
+parser_info.add_argument('app_id', type=str, help="The appId as it appears inside the manifest of the package")
+parser_info.add_argument('-A', '--with-auth', dest='with_auth', action='store_true', help='Access with your credentials. It allows to display info of not published apps. You must be the owner of the package.')
+
+# Argument parser: add-api-key command
+parser_add_api = subparsers.add_parser('add-api-key', help="Add your API key. Required for managing apps. \n NOTE: You can also provide your API key by exporting the 'OPENSTORE_API_KEY' env.")
+parser_add_api.add_argument('api_key', type=str, help="Your API key")
+
+# Argument parser: show-api-key command
+parser_show_api = subparsers.add_parser('show-api-key', help="Show the API key available for this tool.")
+
+args = parser.parse_args()
 uApp = openUapp.repo()
-args = {"-m": ["--changelog", "-m"], "-l": ["--license", "-l"], "-s": ["--source", "-s"], "-d": ["--description", "-d"], "-c": ["--category", "-c"], "-t": ["--tagline", "-t"]}
 
-def usage():
-	print ('Usage:')
-	print ('open-uapp update [Click package] [Args] | Edit an app')
-	print ('open-uapp new [Click package] | Create a new app')
-	print ('open-uapp delete [app ID] | Delete an App')
-	print ('open-uapp list | List all Apps')
-	print ('open-uapp info [app ID] Displays info about an App')
-	print ('open-uapp info-auth [app ID] Displays info about an App (even if not published). You must be the owner of the package.')
-	print ('\nArgs:')
-	print ("--changelog, -m\n--license, -l\n--source, -s\n--description, -d\n--category, -c\n--tagline, -t\n")
-	print ('Examples:')
-	print ('open-uapp update mycoolapp.click -l "GPL" -m "-bugfixes"')
-	print ('open-uapp new mycoolapp.click')
-	print ('open-uapp delete openstore.mzanetti')
-	print ('open-uapp list')
-	print ('open-uapp info openstore.mzanetti')
-
-
-	sys.exit()
-
-if len(sys.argv) <= 1:
-	usage()
-
-elif sys.argv[1] == "update":
-	if len(sys.argv) > 2:
-		force=False
-		if not uApp.hasApi():
-			print ("You have not provided a API key")
-			print ("Use 'open-uapp config api [key]' to set the api key")
-			sys.exit()
-		if len(sys.argv) > 3:
-			skip=False
-			for index, arg in enumerate(sys.argv):
-				if index <= 2:
-					continue
-				if skip:
-					skip=False
-					continue
-				if arg in args["-l"]:
-					uApp.update["license"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-t"]:
-					uApp.update["tagline"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-s"]:
-					uApp.update["source"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-d"]:
-					uApp.update["description"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-c"]:
-					uApp.update["category"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-m"]:
-					uApp.update["changelog"] = sys.argv[index+1]
-					skip=True
-				elif arg == "--force":
-					force=True
-				else:
-					print ("The '" + arg + "' argument do not exsist")
-					sys.exit()
-		uApp.updateR(sys.argv[2], force)
-		print ("Successfully Updated " + uApp._id)
-	else:
-		usage()
-
-elif sys.argv[1] == "delete":
-	if len(sys.argv) > 2:
-		if not uApp.hasApi():
-			print ("You have not provided a API key")
-			print ("Use 'open-uapp config api [key]' to set the api key")
-			sys.exit()
-
-		uApp.delete(sys.argv[2])
-		print ("Successfully Deleted " + sys.argv[2])
-	else:
-		usage()
-elif sys.argv[1] == "config":
-	if not len(sys.argv) > 2:
-		print ("Configs")
-		print ("API: " + uApp.api)
-		print ("repoUrl: " + uApp.repoUrl)
-	elif sys.argv[2] == "api":
-		if len(sys.argv) <= 3:
-			print ("You need to provide an api key")
-		else:
-			uApp.api = sys.argv[3]
-			uApp.saveConfig()
-			print ("API successfully saved")
-	elif sys.argv[2] == "repoUrl":
-		if len(sys.argv) <= 3:
-			print ("You need to provide an url")
-		else:
-			uApp.repoUrl = sys.argv[3]
-			uApp.saveConfig()
-			print ("repoUrl successfully saved")
-	else:
-		print ("Cannot find the config " + sys.argv[2])
-
-elif sys.argv[1] == "new" or sys.argv[1] == "add":
+if args.cmd == "upload":
 	if not uApp.hasApi():
 		print ("You have not provided a API key")
-		print ("Use 'open-uapp config api [key]' to set the api key")
+		print ("Use 'open-uapp add-api-key [key]' to set the api key")
 		sys.exit()
-	if len(sys.argv) > 2:
-		if len(sys.argv) > 3:
-			skip=False
-			for index, arg in enumerate(sys.argv):
-				if index <= 2:
-					continue
-				if skip:
-					skip=False
-					continue
-				if arg in args["-l"]:
-					uApp.update["license"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-t"]:
-					uApp.update["tagline"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-s"]:
-					uApp.update["source"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-d"]:
-					uApp.update["description"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-c"]:
-					uApp.update["category"] = sys.argv[index+1]
-					skip=True
-				elif arg in args["-m"]:
-					uApp.update["changelog"] = sys.argv[index+1]
-					skip=True
-				else:
-					print ("The '" + arg + "' argument do not exsist")
-					sys.exit()
-		uApp.new(sys.argv[2])
-		print ("Successfully Added new package")
 
+	uApp.upload(args.file_path, args.force_yes)
 
-elif sys.argv[1] == "list":
-	uApp.fetch()
-	for i in uApp.repo["data"]:
-		print (i["name"] + " | " + i["id"])
+# Should be okay
+elif args.cmd == "update-info":
+	if not uApp.hasApi():
+		print ("You have not provided a API key")
+		print ("Use 'open-uapp add-api-key [key]' to set the api key")
+		sys.exit()
 
-elif sys.argv[1] == "info":
-	if len(sys.argv) > 2:
-		uApp.fetch()
-		notFound=True
-		for i in uApp.repo["data"]:
-			if sys.argv[2] == i["id"]:
-				notFound=False
-				if not i["name"] == "": print ("Name: " + i["name"])
-				if not i["description"] == "": print ("Description: " + i["description"])
-				if not i["tagline"] == "": print ("Tagline: " + i["tagline"])
-				if not i["license"] == "": print ("License: " + i["license"])
-				if not i["author"] == "": print ("Author: " + i["author"])
-				if not i["category"] == "": print ("Category: " + i["category"])
-		if (notFound): print ("Cannot find app with a id: " + sys.argv[2])
+	if args.license: uApp.update["license"] = args.license
+	if args.tagline: uApp.update["tagline"] = args.tagline
+	if args.source: uApp.update["source"] = args.source
+	if args.description: uApp.update["description"] = args.description
+	if args.category: uApp.update["category"] = args.category
+	if args.changelog: uApp.update["changelog"] = args.changelog
+
+	if args.publish and args.unpublish:
+		print ("You should provide only one choice between 'publish' and 'unpublish' option")
+		sys.exit()
+
+	if args.publish: uApp.update["published"] = 'true'
+	if args.unpublish: uApp.update["published"] = 'false'
+
+	uApp.update_info(args.app_id, args.force_yes)
+
+elif args.cmd == "add-api-key":
+	uApp.api = args.api_key
+	uApp.saveConfig()
+	print ("API key successfully saved")
+
+elif args.cmd == "show-api-key":
+	uApp.loadConfig()
+
+	if uApp.hasApi():
+		print ("Your API key is", uApp.api)
 	else:
-		print ("Missing appID argument")
-elif sys.argv[1] == "info-auth":
-	if len(sys.argv) > 2:
-		uApp.fetchWithAuth(sys.argv[2])
-		notFound=True
-		i = uApp.repo["data"]
-		if sys.argv[2] == i["id"]:
-			notFound=False
-			if not i["name"] == "": print ("Name: " + i["name"])
-			if not i["description"] == "": print ("Description: " + i["description"])
-			if not i["tagline"] == "": print ("Tagline: " + i["tagline"])
-			if not i["license"] == "": print ("License: " + i["license"])
-			if not i["author"] == "": print ("Author: " + i["author"])
-			if not i["category"] == "": print ("Category: " + i["category"])
-		if (notFound): print ("Cannot find app with a id: " + sys.argv[2])
+		print ("API key not defined.")
+
+elif args.cmd == "search":
+	res = uApp.search(args.query)
+	notFound=True
+	idx=1
+
+	for i in res["data"]:
+		notFound=False
+		print("=== Result no.", idx, "===")
+		if not i["name"] == "": print ("Name: " + i["name"])
+		if not i["author"] == "": print ("Author: " + i["author"])
+		if not i["id"] == "": print ("Id: " + i["id"])
+		print("\n")
+		idx = idx + 1
+
+	if (notFound): print ("Cannot find any app for the requested query.")
+
+elif args.cmd == "info":
+	res = {}
+	if args.with_auth:
+		if not uApp.hasApi():
+			print ("You have not provided a API key")
+			print ("Use 'open-uapp add-api-key [key]' to set the api key")
+			sys.exit()
+		else:
+			res = uApp.infoWithAuth(args.app_id)			
 	else:
-		print ("Missing appID argument")
+		res = uApp.info(args.app_id)
+
+	notFound=True
+	i = res["data"]
+
+	if args.app_id == i["id"]:
+		notFound=False
+		if not i["name"] == "": print ("Name: " + i["name"])
+		if not i["description"] == "": print ("Description: " + i["description"])
+		if not i["tagline"] == "": print ("Tagline: " + i["tagline"])
+		if not i["license"] == "": print ("License: " + i["license"])
+		if not i["author"] == "": print ("Author: " + i["author"])
+		if not i["category"] == "": print ("Category: " + i["category"])
+
+	if (notFound): print ("Cannot find app with a id: " + args.app_id)
 
 else:
-	usage()
+	parser.print_help()

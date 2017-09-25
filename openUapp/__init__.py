@@ -3,43 +3,65 @@ import json
 from os import stat, getenv, makedirs
 from os.path import basename, isdir, isfile
 import configparser
-import shutil, tarfile, os, requests
+import os, requests, sys
+from pathlib import Path
 
-class local:
-	def __init__(self):
-		self.localFile="test/repolist.json"
-		self.debug=False
-		self.repoJson=""
-		self.repo=""
-		self.click=""
+# Taken from lp:click
 
-	def localUpdateJson(appID, name, value):
-		r = self.repoJson
-		b = []
-		e = {}
-		for i in r["data"]:
-			if i["id"] == appID:
-				i[name] = value
-			b.append(i)
-		e["data"] = b
-		self.repo = e
+import gi
+gi.require_version('Click', '0.4')
 
-	def openFile(self):
-		f = open(self.localFile, "r")
-		return f.read()
+# There is an unfortunate name clash with
+# https://pypi.python.org/pypi/click; try to detect this and take evasive
+# action.
+import click
+if not getattr(click, "_CLICK_IS_A_PACKAGING_FORMAT_", None):
+    import site
+    wrong_click_mods = [
+        mod for mod in sys.modules if mod.split(".")[0] == "click"]
+    for mod in wrong_click_mods:
+        del sys.modules[mod]
+    try:
+        user_site_index = sys.path.index(site.getusersitepackages())
+    except ValueError:
+        print(
+            "Cannot start click due to a conflict with a different "
+            "locally-installed Python 'click' package.  Remove it using "
+            "Python packaging tools and try again.",
+            file=sys.stderr)
+        sys.exit(1)
+    del sys.path[user_site_index]
 
-	def writeFile(self):
-		self.repoJson = json.dumps(self.repo)
-		f = open(self.localFile, "w")
-		f.write(self.repoJson)
+from click.commands import info
+
+appsEndpoint = "https://open.uappexplorer.com/api/apps"
+manageEndpoint = "https://open.uappexplorer.com/api/v1/manage/apps"
+revisionEndpoint = "https://open.uappexplorer.com/api/v2/apps/revision"
+
+# Taken from: http://code.activestate.com/recipes/577058/
+def query_yes_no(question, default="yes"):
+	valid = {"yes": True, "y": True, "ye": True, "no": False, "n": False}
+	if default is None:
+		prompt = " [y/n] "
+	elif default == "yes":
+		prompt = " [Y/n] "
+	elif default == "no":
+		prompt = " [y/N] "
+	else:
+		raise ValueError("invalid default answer: '%s'" % default)
+
+	while True:
+		sys.stdout.write(question + prompt)
+		choice = input().lower()
+		if default is not None and choice == '':
+			return valid[default]
+		elif choice in valid:
+			return valid[choice]
+		else:
+			sys.stdout.write("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
 
 class repo:
 	def __init__(self):
-		self.repoUrl="https://open.uappexplorer.com/api/apps"
-		self.manageUrl="https://open.uappexplorer.com/api/v1/manage/apps"
-		self.local=False
-		self.debug=False
-		self.repo=""
 		self.update={}
 		self.api=""
 		self.click=""
@@ -67,7 +89,6 @@ class repo:
 		self.conf = conf
 		cfgfile = open(getenv("HOME")+"/.openuapp/conf.conf",'w')
 		conf.add_section('Repo')
-		conf.set('Repo','repoUrl', self.repoUrl)
 		conf.set('Repo','API', self.api)
 		conf.write(cfgfile)
 		cfgfile.close()
@@ -76,110 +97,87 @@ class repo:
 		if self.api == "": return False
 		else: return True
 
-	def updateR(self, fil, force=False):
-		isFile=True
-		if not os.path.isfile(fil):
-			if not self.idExist(fil):
-				raise Exception("%s does not exist", fil)
-			isFile=False
-			self._id=fil
-		if isFile:
-			self.readClick(fil)
-			if not self.idExistWithAuth(self.click["name"]):
-				raise ValueError("The id %s does not exist on the server", self.click["name"])
-			if not self.isNeverVersion(self.click["name"], self.click["version"]):
-				if force:
-					print("There is a never or equal version already published, but pushing as you wanted")
-				else:
-					raise ValueError("These is a never or equal version already published, use --force to push anyway")
-			self._id=self.click["name"]
-			files = {'file': open(fil, 'rb')}
-		url = self.repoUrl+"/"+self._id+"/?apikey=" + self.api
-		
-		if self.update == "" and isFile:
-			r=requests.put(url, files=files)
-		elif not isFile:
-			r=requests.put(url, data=self.update)
-		else:
-			r=requests.put(url, files=files, data=self.update)
+	def upload(self, fil, _force_yes = False):
+		self.click = click.commands.info.get_manifest(object(), str(Path(fil).resolve()))
+		print ("Package id:", self.click["name"])
 
-	def new(self, fil):
-		if not os.path.isfile(fil):
-			raise ValueError("%s does not exist", fil)
+		if not _force_yes:
+			if not query_yes_no("Do you confirm you want to upload the package?"):
+				print("Aborted")
+				return
+
+
+		if not self.isNewerVersion(self.click["name"], self.click["version"]):
+			print("There is already a revision with the same version. Aborting...")
+			return
+
+		self._id=self.click["name"]
 		files = {'file': open(fil, 'rb')}
-		url = self.repoUrl + "?apikey=" + self.api
 
-		if self.update == "":
-			r=requests.post(url, files=files)
+		url = manageEndpoint + "/" + self._id + "/?apikey=" + self.api
+		
+		r=requests.put(url, files=files)
+
+		print ("Successfully uploaded " + self._id)
+
+	# OK
+	def update_info(self, _id, _force_yes = False):
+		if not self.idExistWithAuth(_id):
+			raise ValueError("The id %s does not exist on the server", self.click["name"])
+
+		if not self.update == "":
+			print ("\nSummary of the information provided for package:", _id)
+			for x in self.update:
+				print (str(x).ljust(15), ':', self.update[x])
+
+		if not _force_yes:
+			if not query_yes_no("Do you confirm you want to update remote info?"):
+				print("Aborted")
+				return
+
+		url = manageEndpoint + "/" + _id + "?apikey=" + self.api
+
+		r=requests.put(url, data=self.update)
+
+		if r.status_code == 404:
+			print ("Failed to update info. Please ensure pkg_id is valid.")
+		elif r.status_code == 400:
+			print ("There was an error updating the info.")
+			print ("Error info:", r.text)
 		else:
-			r=requests.post(url, files=files, data=self.update)
+			print ("Successfully updated remote package info")
 
-	def delete(self, _id):
-		if not self.idExist(_id):
-			raise ValueError("The id %s does not exit...", str(_id))
-		url = self.repoUrl + "/" + str(_id) + "/?apikey=" + self.api
-		requests.delete(url)
-
-	def fetch(self):
-		with urllib.request.urlopen(self.repoUrl) as response:
-			self.repo = json.loads(response.read().decode("utf-8"))
-
-	def fetchWithAuth(self, _id):
-		url = self.manageUrl + "/" + str(_id) + "/?apikey=" + self.api
+	def search(self, _query):
+		url = appsEndpoint + "?search=" + str(_query)
 		with urllib.request.urlopen(url) as response:
-			self.repo = json.loads(response.read().decode("utf-8"))
+			return json.loads(response.read().decode("utf-8"))
 
-	def getNameFromId(self, _id):
-		if not self.idExist(_id):
-			raise ValueError("The id %s does not exit...", _id)
-		for i in self.repo["data"]:
-			if i["id"] == idd:
-				return i["name"]
-		return "Null"
+	def info(self, _id):
+		url = appsEndpoint + "/" + str(_id)
+		with urllib.request.urlopen(url) as response:
+			return json.loads(response.read().decode("utf-8"))
 
-	def idExist(self, idd):
-		if self.repo == "":
-			self.fetch()
-		for i in self.repo["data"]:
-			if i["id"] == idd:
-				return True
-		return False
+	def infoWithAuth(self, _id):
+		url = manageEndpoint + "/" + str(_id) + "/?apikey=" + self.api
+		with urllib.request.urlopen(url) as response:
+			return json.loads(response.read().decode("utf-8"))
 
-	def idExistWithAuth(self, idd):
-		if self.repo == "":
-			self.fetchWithAuth(idd)
-		i = self.repo["data"]
-		if i["id"] == idd:
+	def idExistWithAuth(self, _id):
+		i = self.infoWithAuth(_id)["data"]
+		if i["id"] == _id:
 			return True
 		return False
 
-	def isNeverVersion(self, idd, version):
-		if self.repo == "":
-			self.fetch()
+	def isNewerVersion(self, idd, version):
+		i = self.infoWithAuth(idd)["data"]
+		revAlreadyExists = False
+		
+		revisions = i["revisions"]
 
-		if isinstance(self.repo["data"], list):
-			for i in self.repo["data"]:
-				if i["id"] == idd:
-					if i["version"].replace(".", "") < version.replace(".", ""):
-						return True
+		for r in revisions:
+			if r["version"] == version: revAlreadyExists = True
+
+		if revAlreadyExists:
+			return False
 		else:
-			i = self.repo["data"]
-			if i["id"] == idd:
-				if i["version"].replace(".", "") < version.replace(".", ""):
-					return True
-		return False
-
-	def readClick(self, fil):
-		cdback = os.getcwd()
-		os.chdir("/tmp")
-		shutil.rmtree("/tmp/uapp", ignore_errors=True)
-		os.makedirs("uapp")
-		os.chdir(cdback)
-		shutil.copyfile(fil, "/tmp/uapp/o.click")
-		os.chdir("/tmp/uapp")
-		os.system("ar vx o.click > /dev/null 2>&1")
-		tar = tarfile.open("control.tar.gz")
-		f=tar.extractfile(tar.getmember("./manifest"))
-		self.click = json.loads(f.read().decode("utf-8"))
-		os.system("rm -r /tmp/uapp")
-		os.chdir(cdback)
+			return True
