@@ -124,8 +124,8 @@ class repo:
 		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 
 	def fetch(self):
-		try: self.repo = json.loads(urllib2.urlopen(self.repoUrl).read())
-		except: raise ValueError("Cannot fetch repo from url: %s", self.repoUrl)
+		self.repo = json.loads(urllib2.urlopen(self.repoUrl).read())
+
 
 	def getNameFromId(self, _id):
 		if not self.idExist(_id):
