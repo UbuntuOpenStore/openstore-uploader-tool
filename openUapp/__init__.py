@@ -96,33 +96,30 @@ class repo:
 			self._id=self.click["name"]
 			files = {'file': open(fil, 'rb')}
 		url = self.repoUrl+"/"+self._id+"/?apikey=" + self.api
-		try:
-			if self.update == "" and isFile:
-				r=requests.put(url, files=files)
-			elif not isFile:
-				r=requests.put(url, data=self.update)
-			else:
-				r=requests.put(url, files=files, data=self.update)
-		except: raise ValueError("Faled to connect to the server or the server returned with an error")
+		
+		if self.update == "" and isFile:
+			r=requests.put(url, files=files)
+		elif not isFile:
+			r=requests.put(url, data=self.update)
+		else:
+			r=requests.put(url, files=files, data=self.update)
 
 	def new(self, fil):
 		if not os.path.isfile(fil):
 			raise ValueError("%s does not exist", fil)
 		files = {'file': open(fil, 'rb')}
 		url = self.repoUrl + "?apikey=" + self.api
-		try:
-			if self.update == "":
-				r=requests.post(url, files=files)
-			else:
-				r=requests.post(url, files=files, data=self.update)
-		except: raise ValueError("Faled to connect to the server or the server returned with an error")
+
+		if self.update == "":
+			r=requests.post(url, files=files)
+		else:
+			r=requests.post(url, files=files, data=self.update)
 
 	def delete(self, _id):
 		if not self.idExist(_id):
 			raise ValueError("The id %s does not exit...", _id)
 		url = self.repoUrl+"/"+_id+"/?apikey=" + self.api
-		try: requests.delete(url)
-		except: raise ValueError("Faled to connect to the server or the server returned with an error")
+		requests.delete(url)
 
 	def fetch(self):
 		with urllib.request.urlopen(self.repoUrl) as response:

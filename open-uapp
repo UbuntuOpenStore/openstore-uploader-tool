@@ -71,10 +71,8 @@ elif sys.argv[1] == "update":
 				else:
 					print ("The '" + arg + "' argument do not exsist")
 					sys.exit()
-		try:
-			uApp.updateR(sys.argv[2], force)
-			print ("Successfully Updated " + uApp._id)
-		except ValueError as e: print (e[0])
+		uApp.updateR(sys.argv[2], force)
+		print ("Successfully Updated " + uApp._id)
 	else:
 		usage()
 
@@ -84,10 +82,9 @@ elif sys.argv[1] == "delete":
 			print ("You have not provided a API key")
 			print ("Use 'open-uapp config api [key]' to set the api key")
 			sys.exit()
-		try:
-			uApp.delete(sys.argv[2])
-			print ("Successfully Deleted " + sys.argv[2])
-		except ValueError as e: print (e[0])
+
+		uApp.delete(sys.argv[2])
+		print ("Successfully Deleted " + sys.argv[2])
 	else:
 		usage()
 elif sys.argv[1] == "config":
@@ -147,10 +144,9 @@ elif sys.argv[1] == "new" or sys.argv[1] == "add":
 				else:
 					print ("The '" + arg + "' argument do not exsist")
 					sys.exit()
-		try:
-			uApp.new(sys.argv[2])
-			print ("Successfully Added new package")
-		except ValueError as e: print (e[0])
+		uApp.new(sys.argv[2])
+		print ("Successfully Added new package")
+
 
 elif sys.argv[1] == "list":
 	uApp.fetch()
