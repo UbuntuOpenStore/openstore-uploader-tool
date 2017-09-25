@@ -1,7 +1,8 @@
-import urllib2, urllib, json
+import urllib.request, urllib.error, urllib.parse
+import json
 from os import stat, getenv, makedirs
 from os.path import basename, isdir, isfile
-import ConfigParser
+import configparser
 import shutil, tarfile, os, requests
 
 class local:
@@ -45,7 +46,7 @@ class repo:
 		self.loadConfig()
 
 	def loadConfig(self):
-		conf = ConfigParser.ConfigParser()
+		conf = configparser.ConfigParser()
 		self.conf = conf
 
 		if 'OPENSTORE_API_KEY' in os.environ:
@@ -63,7 +64,7 @@ class repo:
 			self.api = conf.get("Repo", "API")
 
 	def saveConfig(self):
-		conf = ConfigParser.ConfigParser()
+		conf = configparser.ConfigParser()
 		self.conf = conf
 		cfgfile = open(getenv("HOME")+"/.openuapp/conf.conf",'w')
 		conf.add_section('Repo')
@@ -124,8 +125,8 @@ class repo:
 		except: raise ValueError("Faled to connect to the server or the server returned with an error")
 
 	def fetch(self):
-		self.repo = json.loads(urllib2.urlopen(self.repoUrl).read())
-
+		with urllib.request.urlopen(self.repoUrl) as response:
+			self.repo = json.loads(response.read().decode("utf-8"))
 
 	def getNameFromId(self, _id):
 		if not self.idExist(_id):
