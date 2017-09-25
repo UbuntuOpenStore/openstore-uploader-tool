@@ -8,7 +8,7 @@ setup(name='openstore-cli',
       author='Marius Gripsgard',
       author_email='me@mariogrip.com',
       url='https://code.launchpad.net/~mariogrip/openstore-tool/trunk',
-      packages=['openstoreCLI'],
+      packages=['openstorecli'],
       scripts=['openstore-cli'],
       install_requires=[
           'requests'

@@ -4,7 +4,7 @@ import sys
 import os
 import shutil
 import argparse
-import openUapp
+import openstorecli
 from os.path import isfile
 import urllib, requests
 
@@ -54,7 +54,7 @@ parser_add_api.add_argument('api_key', type=str, help="Your API key")
 parser_show_api = subparsers.add_parser('show-api-key', help="Show the API key available for this tool.")
 
 args = parser.parse_args()
-uApp = openUapp.repo()
+uApp = openstorecli.repo()
 
 if args.cmd == "upload":
 	if not uApp.hasApi():

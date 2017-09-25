@@ -76,18 +76,18 @@ class repo:
 			self.api = os.environ.get('OPENSTORE_API_KEY', '')
 			return
 
-		if not isdir(getenv("HOME")+"/.openuapp"):
-			makedirs(getenv("HOME")+"/.openuapp")
-		if not isfile(getenv("HOME")+"/.openuapp/conf.conf"):
+		if not isdir(getenv("HOME")+"/.openstorecli"):
+			makedirs(getenv("HOME")+"/.openstorecli")
+		if not isfile(getenv("HOME")+"/.openstorecli/conf.conf"):
 			self.saveConfig()
 		else:
-			conf.read(getenv("HOME")+"/.openuapp/conf.conf")
+			conf.read(getenv("HOME")+"/.openstorecli/conf.conf")
 			self.api = conf.get("Repo", "API")
 
 	def saveConfig(self):
 		conf = configparser.ConfigParser()
 		self.conf = conf
-		cfgfile = open(getenv("HOME")+"/.openuapp/conf.conf",'w')
+		cfgfile = open(getenv("HOME")+"/.openstorecli/conf.conf",'w')
 		conf.add_section('Repo')
 		conf.set('Repo','API', self.api)
 		conf.write(cfgfile)
