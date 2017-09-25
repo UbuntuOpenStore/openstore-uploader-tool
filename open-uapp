@@ -117,7 +117,7 @@ elif sys.argv[1] == "new" or sys.argv[1] == "add":
 		print ("You have not provided a API key")
 		print ("Use 'open-uapp config api [key]' to set the api key")
 		sys.exit()
-	if sys.argv > 2:
+	if len(sys.argv) > 2:
 		if len(sys.argv) > 3:
 			skip=False
 			for index, arg in enumerate(sys.argv):
