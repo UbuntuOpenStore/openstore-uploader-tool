@@ -36,6 +36,7 @@ class local:
 class repo:
 	def __init__(self):
 		self.repoUrl="https://open.uappexplorer.com/api/apps"
+		self.manageUrl="https://open.uappexplorer.com/api/v1/manage/apps"
 		self.local=False
 		self.debug=False
 		self.repo=""
@@ -51,7 +52,6 @@ class repo:
 
 		if 'OPENSTORE_API_KEY' in os.environ:
 			self.api = os.environ.get('OPENSTORE_API_KEY', '')
-			self.repoUrl = os.environ.get('OPENSTORE_REPO_URL', '')
 			return
 
 		if not isdir(getenv("HOME")+"/.openuapp"):
@@ -60,7 +60,6 @@ class repo:
 			self.saveConfig()
 		else:
 			conf.read(getenv("HOME")+"/.openuapp/conf.conf")
-			self.repoUrl = conf.get("Repo", "repoUrl")
 			self.api = conf.get("Repo", "API")
 
 	def saveConfig(self):
@@ -86,7 +85,7 @@ class repo:
 			self._id=fil
 		if isFile:
 			self.readClick(fil)
-			if not self.idExist(self.click["name"]):
+			if not self.idExistWithAuth(self.click["name"]):
 				raise ValueError("The id %s does not exist on the server", self.click["name"])
 			if not self.isNeverVersion(self.click["name"], self.click["version"]):
 				if force:
@@ -117,12 +116,17 @@ class repo:
 
 	def delete(self, _id):
 		if not self.idExist(_id):
-			raise ValueError("The id %s does not exit...", _id)
-		url = self.repoUrl+"/"+_id+"/?apikey=" + self.api
+			raise ValueError("The id %s does not exit...", str(_id))
+		url = self.repoUrl + "/" + str(_id) + "/?apikey=" + self.api
 		requests.delete(url)
 
 	def fetch(self):
 		with urllib.request.urlopen(self.repoUrl) as response:
+			self.repo = json.loads(response.read().decode("utf-8"))
+
+	def fetchWithAuth(self, _id):
+		url = self.manageUrl + "/" + str(_id) + "/?apikey=" + self.api
+		with urllib.request.urlopen(url) as response:
 			self.repo = json.loads(response.read().decode("utf-8"))
 
 	def getNameFromId(self, _id):
@@ -141,10 +145,25 @@ class repo:
 				return True
 		return False
 
+	def idExistWithAuth(self, idd):
+		if self.repo == "":
+			self.fetchWithAuth(idd)
+		i = self.repo["data"]
+		if i["id"] == idd:
+			return True
+		return False
+
 	def isNeverVersion(self, idd, version):
 		if self.repo == "":
 			self.fetch()
-		for i in self.repo["data"]:
+
+		if isinstance(self.repo["data"], list):
+			for i in self.repo["data"]:
+				if i["id"] == idd:
+					if i["version"].replace(".", "") < version.replace(".", ""):
+						return True
+		else:
+			i = self.repo["data"]
 			if i["id"] == idd:
 				if i["version"].replace(".", "") < version.replace(".", ""):
 					return True

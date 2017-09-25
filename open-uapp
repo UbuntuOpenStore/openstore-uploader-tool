@@ -18,6 +18,7 @@ def usage():
 	print ('open-uapp delete [app ID] | Delete an App')
 	print ('open-uapp list | List all Apps')
 	print ('open-uapp info [app ID] Displays info about an App')
+	print ('open-uapp info-auth [app ID] Displays info about an App (even if not published). You must be the owner of the package.')
 	print ('\nArgs:')
 	print ("--changelog, -m\n--license, -l\n--source, -s\n--description, -d\n--category, -c\n--tagline, -t\n")
 	print ('Examples:')
@@ -155,7 +156,7 @@ elif sys.argv[1] == "list":
 
 elif sys.argv[1] == "info":
 	if len(sys.argv) > 2:
-		uApp.fetch()
+		uApp.fetchAuth()
 		notFound=True
 		for i in uApp.repo["data"]:
 			if sys.argv[2] == i["id"]:
@@ -166,6 +167,22 @@ elif sys.argv[1] == "info":
 				if not i["license"] == "": print ("License: " + i["license"])
 				if not i["author"] == "": print ("Author: " + i["author"])
 				if not i["category"] == "": print ("Category: " + i["category"])
+		if (notFound): print ("Cannot find app with a id: " + sys.argv[2])
+	else:
+		print ("Missing appID argument")
+elif sys.argv[1] == "info-auth":
+	if len(sys.argv) > 2:
+		uApp.fetchWithAuth(sys.argv[2])
+		notFound=True
+		i = uApp.repo["data"]
+		if sys.argv[2] == i["id"]:
+			notFound=False
+			if not i["name"] == "": print ("Name: " + i["name"])
+			if not i["description"] == "": print ("Description: " + i["description"])
+			if not i["tagline"] == "": print ("Tagline: " + i["tagline"])
+			if not i["license"] == "": print ("License: " + i["license"])
+			if not i["author"] == "": print ("Author: " + i["author"])
+			if not i["category"] == "": print ("Category: " + i["category"])
 		if (notFound): print ("Cannot find app with a id: " + sys.argv[2])
 	else:
 		print ("Missing appID argument")
