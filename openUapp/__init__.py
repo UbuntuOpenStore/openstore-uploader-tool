@@ -153,6 +153,7 @@ class repo:
 	def readClick(self, fil):
 		cdback = os.getcwd()
 		os.chdir("/tmp")
+		shutil.rmtree("/tmp/uapp", ignore_errors=True)
 		os.makedirs("uapp")
 		os.chdir(cdback)
 		shutil.copyfile(fil, "/tmp/uapp/o.click")
