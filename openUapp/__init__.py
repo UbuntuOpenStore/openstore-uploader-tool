@@ -160,6 +160,6 @@ class repo:
 		os.system("ar vx o.click > /dev/null 2>&1")
 		tar = tarfile.open("control.tar.gz")
 		f=tar.extractfile(tar.getmember("./manifest"))
-		self.click = json.loads(f.read())
+		self.click = json.loads(f.read().decode("utf-8"))
 		os.system("rm -r /tmp/uapp")
 		os.chdir(cdback)
