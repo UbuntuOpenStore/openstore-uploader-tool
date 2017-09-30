@@ -14,8 +14,8 @@ class MyParser(argparse.ArgumentParser):
         sys.exit(2)
 
 parser = MyParser(description="This is the CLI tool for the OpenStore app store service. Manage or search apps for your Ubuntu Touch device.",
-		usage="'open-uapp <command>'",
-		epilog="Run 'open-uapp <command> help' to see the options available for each command.")
+		usage="'openstore-cli <command>'",
+		epilog="Run 'openstore-cli <command> help' to see the options available for each command.")
 
 subparsers = parser.add_subparsers(dest='cmd', title="Commands")
 
@@ -59,7 +59,7 @@ uApp = openstorecli.repo()
 if args.cmd == "upload":
 	if not uApp.hasApi():
 		print ("You have not provided a API key")
-		print ("Use 'open-uapp add-api-key [key]' to set the api key")
+		print ("Use 'openstore-cli add-api-key [key]' to set the api key")
 		sys.exit()
 
 	uApp.upload(args.file_path, args.force_yes)
@@ -68,7 +68,7 @@ if args.cmd == "upload":
 elif args.cmd == "update-info":
 	if not uApp.hasApi():
 		print ("You have not provided a API key")
-		print ("Use 'open-uapp add-api-key [key]' to set the api key")
+		print ("Use 'openstore-cli add-api-key [key]' to set the api key")
 		sys.exit()
 
 	if args.license: uApp.update["license"] = args.license
@@ -121,7 +121,7 @@ elif args.cmd == "info":
 	if args.with_auth:
 		if not uApp.hasApi():
 			print ("You have not provided a API key")
-			print ("Use 'open-uapp add-api-key [key]' to set the api key")
+			print ("Use 'openstore-cli add-api-key [key]' to set the api key")
 			sys.exit()
 		else:
 			res = uApp.infoWithAuth(args.app_id)			
