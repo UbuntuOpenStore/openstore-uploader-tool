@@ -85,16 +85,23 @@ class repo:
 				return
 
 
-		if not self.isNewerVersion(self.click["name"], self.click["version"]):
+		isNewVersion = self.isNewerVersion(self.click["name"], self.click["version"])
+
+		if isNewVersion is 0:
 			print("There is already a revision with the same version. Aborting...")
 			return
 
 		self._id=self.click["name"]
 		files = {'file': open(fil, 'rb')}
 
-		url = manageEndpoint + "/" + self._id + "/?apikey=" + self.api
-		
-		r=requests.put(url, files=files)
+		if isNewVersion is -1:
+			# This is a new upload
+			url = manageEndpoint + "/?apikey=" + self.api	
+			r=requests.post(url, files=files)
+		elif isNewVersion is 1:
+			# This is an update
+			url = manageEndpoint + "/" + self._id + "/?apikey=" + self.api	
+			r=requests.put(url, files=files)
 
 		print ("Successfully uploaded " + self._id)
 
@@ -146,8 +153,18 @@ class repo:
 			return True
 		return False
 
-	def isNewerVersion(self, idd, version):
-		i = self.infoWithAuth(idd)["data"]
+	def isNewerVersion(self, _id, version):
+		url = manageEndpoint + "/" + str(_id) + "/?apikey=" + self.api
+
+		try:
+			r = urllib.request.urlopen(url)
+		except urllib.error.HTTPError as err:
+			# This package has never been uploaded before now. Consider it as
+			# a newer version.
+			if err.code == 404:
+				return -1
+
+		i = json.loads(r.read().decode("utf-8"))["data"]
 		revAlreadyExists = False
 		
 		revisions = i["revisions"]
@@ -156,6 +173,6 @@ class repo:
 			if r["version"] == version: revAlreadyExists = True
 
 		if revAlreadyExists:
-			return False
+			return 0
 		else:
-			return True
+			return 1
