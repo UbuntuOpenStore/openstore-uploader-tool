@@ -6,6 +6,7 @@ import configparser
 import os, requests, sys
 from pathlib import Path
 
+import click
 from click.commands import info
 
 appsEndpoint = "https://open.uappexplorer.com/api/apps"
