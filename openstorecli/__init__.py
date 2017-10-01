@@ -6,6 +6,9 @@ import configparser
 import os, requests, sys
 from pathlib import Path
 
+import gi		
+gi.require_version('Click', '0.4')
+
 import click
 from click.commands import info
 
