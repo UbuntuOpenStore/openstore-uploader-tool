@@ -6,32 +6,6 @@ import configparser
 import os, requests, sys
 from pathlib import Path
 
-# Taken from lp:click
-
-import gi
-gi.require_version('Click', '0.4')
-
-# There is an unfortunate name clash with
-# https://pypi.python.org/pypi/click; try to detect this and take evasive
-# action.
-import click
-if not getattr(click, "_CLICK_IS_A_PACKAGING_FORMAT_", None):
-    import site
-    wrong_click_mods = [
-        mod for mod in sys.modules if mod.split(".")[0] == "click"]
-    for mod in wrong_click_mods:
-        del sys.modules[mod]
-    try:
-        user_site_index = sys.path.index(site.getusersitepackages())
-    except ValueError:
-        print(
-            "Cannot start click due to a conflict with a different "
-            "locally-installed Python 'click' package.  Remove it using "
-            "Python packaging tools and try again.",
-            file=sys.stderr)
-        sys.exit(1)
-    del sys.path[user_site_index]
-
 from click.commands import info
 
 appsEndpoint = "https://open.uappexplorer.com/api/apps"
