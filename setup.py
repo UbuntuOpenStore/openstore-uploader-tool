@@ -2,14 +2,14 @@
 
 from distutils.core import setup
 
-setup(name='open-uApp',
+setup(name='openstore-cli',
       version='0.7',
-      description='A tool for manage the repo of the OpenStore app for Ubuntu touch',
+      description='CLI tool for the OpenStore app store service. Manage or search apps for your Ubuntu Touch device.',
       author='Marius Gripsgard',
       author_email='me@mariogrip.com',
       url='https://code.launchpad.net/~mariogrip/openstore-tool/trunk',
-      packages=['openUapp'],
-      scripts=['open-uapp'],
+      packages=['openstorecli'],
+      scripts=['openstore-cli'],
       install_requires=[
           'requests'
       ]

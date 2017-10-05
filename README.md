@@ -1,5 +1,5 @@
-# open-uapp-tool
-openstore (open.uappexplorer.com) manage tool
+# openstore-uploader-tool
+OpenStore (open.uappexplorer.com) CLI manage tool
 
 ## Install
 
@@ -9,28 +9,30 @@ sudo ./setup.py install
 
 ## Usage:
 
-open-uapp update [Click file] [Args] | Edit an app <br>
-open-uapp new [Click file] [Args] | Create a new app <br>
-open-uapp delete [app ID] | Delete an App <br>
-open-uapp list | List all Apps <br>
-open-uapp info [app ID] | Displays info about an App <br>
-open-uapp config | List configs <br>
-open-uapp config [Config] [Value] | Edit config <br>
+usage: 'openstore-cli <command>'
 
-## Args:
+This is the CLI tool for the OpenStore app store service. Manage or search
+apps for your Ubuntu Touch device.
 
---changelog, -m
---license, -l
---source, -s
---description, -d
---category, -c
---tagline, -t
+optional arguments:
+  -h, --help            show this help message and exit
 
-## Examples:
+Commands:
+    upload              Push a new package to the OpenStore server, as update
+                        or new submission.
 
-open-uapp update myawesomeapp.click <br>
-open-uapp update myawesomeapp.click -l "GPL" -s http://github.com/myawesomeapp <br>
-open-uapp new myawesomeapp.click <br>
-open-uapp delete openstore.mzanetti <br>
-open-uapp list <br>
-open-uapp info openstore.mzanetti
+    update-info         Update remote informations of a package on the
+                        OpenStore server
+
+    search              Search an application available on the store (by its
+                        id, name, keyword, or description
+
+    info                Display information available for a single application
+
+    add-api-key         Add your API key. Required for managing apps.
+                        NOTE: You can also provide your API key by exporting the
+                        'OPENSTORE_API_KEY' env.
+
+    show-api-key        Show the API key available for this tool.
+
+Run 'openstore-cli <command> help' to see the options available for each command.
