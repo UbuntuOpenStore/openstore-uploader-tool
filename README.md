@@ -35,4 +35,4 @@ Commands:
 
     show-api-key        Show the API key available for this tool.
 
-Run 'openstore-cli <command> help' to see the options available for each command.
+Run `openstore-cli <command> help` to see the options available for each command.
