@@ -9,7 +9,7 @@ sudo ./setup.py install
 
 ## Usage:
 
-usage: 'openstore-cli <command>'
+usage: `openstore-cli <command>`
 
 This is the CLI tool for the OpenStore app store service. Manage or search
 apps for your Ubuntu Touch device.
@@ -35,4 +35,4 @@ Commands:
 
     show-api-key        Show the API key available for this tool.
 
-Run 'openstore-cli <command> help' to see the options available for each command.
+Run `openstore-cli <command> help` to see the options available for each command.
