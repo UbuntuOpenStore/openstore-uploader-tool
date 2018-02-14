@@ -1,5 +1,6 @@
-# openstore-uploader-tool
-OpenStore (open.uappexplorer.com) CLI manage tool
+# OpenStore Uploader CLI Tool
+
+[OpenStore](open-store.io) CLI manage tool
 
 ## Install
 

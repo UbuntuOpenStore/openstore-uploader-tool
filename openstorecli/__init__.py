@@ -6,15 +6,15 @@ import configparser
 import os, requests, sys
 from pathlib import Path
 
-import gi		
+import gi
 gi.require_version('Click', '0.4')
 
 import click
 from click.commands import info
 
-appsEndpoint = "https://open.uappexplorer.com/api/apps"
-manageEndpoint = "https://open.uappexplorer.com/api/v1/manage/apps"
-revisionEndpoint = "https://open.uappexplorer.com/api/v2/apps/revision"
+appsEndpoint = "https://open-store.io/api/apps"
+manageEndpoint = "https://open-store.io/api/v1/manage/apps"
+revisionEndpoint = "https://open-store.io/api/v2/apps/revision"
 
 # Taken from: http://code.activestate.com/recipes/577058/
 def query_yes_no(question, default="yes"):
@@ -96,11 +96,11 @@ class repo:
 
 		if isNewVersion is -1:
 			# This is a new upload
-			url = manageEndpoint + "/?apikey=" + self.api	
+			url = manageEndpoint + "/?apikey=" + self.api
 			r=requests.post(url, files=files)
 		elif isNewVersion is 1:
 			# This is an update
-			url = manageEndpoint + "/" + self._id + "/?apikey=" + self.api	
+			url = manageEndpoint + "/" + self._id + "/?apikey=" + self.api
 			r=requests.put(url, files=files)
 
 		print ("Successfully uploaded " + self._id)
@@ -166,7 +166,7 @@ class repo:
 
 		i = json.loads(r.read().decode("utf-8"))["data"]
 		revAlreadyExists = False
-		
+
 		revisions = i["revisions"]
 
 		for r in revisions:
