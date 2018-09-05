@@ -12,9 +12,13 @@ gi.require_version('Click', '0.4')
 import click
 from click.commands import info
 
-appsEndpoint = "https://open-store.io/api/apps"
-manageEndpoint = "https://open-store.io/api/v1/manage/apps"
-revisionEndpoint = "https://open-store.io/api/v2/apps/revision"
+OPENSTORE_API = 'https://open-store.io'
+if 'OPENSTORE_API' in os.environ:
+	OPENSTORE_API = os.environ['OPENSTORE_API']
+
+APPS_ENDPOINT = OPENSTORE_API + '/api/v3/apps'
+MANAGE_ENDPOINT = OPENSTORE_API + '/api/v3/manage'
+REVISION_ENDPOINT = OPENSTORE_API + '/api/v3/manage/{}/revision'
 
 # Taken from: http://code.activestate.com/recipes/577058/
 def query_yes_no(question, default="yes"):
@@ -95,13 +99,12 @@ class repo:
 		files = {'file': open(fil, 'rb')}
 
 		if isNewVersion is -1:
-			# This is a new upload
-			url = manageEndpoint + "/?apikey=" + self.api
-			r=requests.post(url, files=files)
+			# This is a new app
+			print('Visit https://open-store.io/submit to upload this app for the first time')
 		elif isNewVersion is 1:
 			# This is an update
-			url = manageEndpoint + "/" + self._id + "/?apikey=" + self.api
-			r=requests.put(url, files=files)
+			url = REVISION_ENDPOINT.format(self._id) + "?apikey=" + self.api
+			r=requests.post(url, files=files)
 
 		print ("Successfully uploaded " + self._id)
 
@@ -120,7 +123,7 @@ class repo:
 				print("Aborted")
 				return
 
-		url = manageEndpoint + "/" + _id + "?apikey=" + self.api
+		url = MANAGE_ENDPOINT + "/" + _id + "?apikey=" + self.api
 
 		r=requests.put(url, data=self.update)
 
@@ -133,17 +136,17 @@ class repo:
 			print ("Successfully updated remote package info")
 
 	def search(self, _query):
-		url = appsEndpoint + "?search=" + str(_query)
+		url = APPS_ENDPOINT + "?search=" + str(_query)
 		with urllib.request.urlopen(url) as response:
 			return json.loads(response.read().decode("utf-8"))
 
 	def info(self, _id):
-		url = appsEndpoint + "/" + str(_id)
+		url = APPS_ENDPOINT + "/" + str(_id)
 		with urllib.request.urlopen(url) as response:
 			return json.loads(response.read().decode("utf-8"))
 
 	def infoWithAuth(self, _id):
-		url = manageEndpoint + "/" + str(_id) + "/?apikey=" + self.api
+		url = MANAGE_ENDPOINT + "/" + str(_id) + "/?apikey=" + self.api
 		with urllib.request.urlopen(url) as response:
 			return json.loads(response.read().decode("utf-8"))
 
@@ -154,7 +157,7 @@ class repo:
 		return False
 
 	def isNewerVersion(self, _id, version):
-		url = manageEndpoint + "/" + str(_id) + "/?apikey=" + self.api
+		url = MANAGE_ENDPOINT + "/" + str(_id) + "/?apikey=" + self.api
 
 		try:
 			r = urllib.request.urlopen(url)
